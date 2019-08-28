@@ -71,7 +71,7 @@
 > #define	DEAFED			0x881
 > #define	RELIFED			0x882
 > 
-> #define NCORES 1
+> #define NCORES 2
 40a114,123
 > 	je	[FORCEDEAF], 0, skipdeaf+
 > 	mov	0, [FORCEDEAF]
