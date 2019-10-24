@@ -65,7 +65,7 @@ To compile the source code, you are required to first clone the original nexmon 
 ## bcm4339, bcm4358
 
 The following steps will get you started on Xubuntu 16.04 LTS:
-1. Install some dependencies: `sudo apt-get install git gawk qpdf adb`
+1. Install some dependencies: `sudo apt-get install git gawk qpdf adb flex bison`
 2. **Only necessary for x86_64 systems**, install i386 libs: 
   ```
   sudo dpkg --add-architecture i386
@@ -114,11 +114,40 @@ On your Raspberry Pi 3B+/4 running Raspbian with kernel 4.19 run the following:
 
 ## bcm4366c0
 
-For now we provide a tempory solution to enable CSI extraction on the bcm4366 in form of a pre-patched kernel object. **This will be replaced by a nexmon based patch soon**.
-1. Copy bcm4366/dhd.ko to your Asus RT-AC86U: `scp bcm4366/dhd.ko admin@xxx.xxx.xxx.xxx:/jffs/dhd.ko`
-2. Copy bcm4366/nexutil to your Asus RT-AC86U: `scp bcm4366/nexutil admin@xxx.xxx.xxx.xxx:/jffs/nexutil`
-3. Make nexutil executable: `ssh admin@xxx.xxx.xxx.xxx "/bin/chmod +x /jffs/nexutil"`
-4. Unload the current dhd module and load the modified one: `ssh admin@xxx.xxx.xxx.xxx "/sbin/rmmod dhd; /sbin/insmod /jffs/dhd.ko"`
+The following steps will get you started on Xubuntu 18.04.3 LTS:
+1. Install some dependencies: `sudo apt-get install git gawk qpdf flex bison`
+2. **Only necessary for x86_64 systems**, install i386 libs: 
+  ```
+  sudo dpkg --add-architecture i386
+  sudo apt-get update
+  sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+  ```
+3. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
+4. Navigate to the previously cloned nexmon directory and execute `source setup_env.sh` to set 
+   a couple of environment variables.
+5. Run `make` to extract ucode, templateram and flashpatches from the original firmwares.
+6. Navigate to patches/bcm4366c0/10_10_122_20/ and clone this repository: 
+    `git clone https://github.com/seemoo-lab/nexmon_csi.git`
+7. Enter the created subdirectory nexmon_csi and run 
+    `make install-firmware REMOTEADDR=<address of your rt-ac86u>` to compile our firmware patch and install it on your RT-AC86U router.
+8. Clone the aarch64 toolchain repository: `git clone https://github.com/RMerl/am-toolchains.git`.
+9. Set the compile environment:
+    ```
+    export AMCC=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/bin/aarch64-buildroot-linux-gnu-
+    export LD_LIBRARY_PATH=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/lib
+    ```
+10. Go back to the nexmon repository root, compile and install nexutil:
+    ```
+    cd utilities/libnexio
+    ${AMCC}gcc -c libnexio.c -o libnexio.o -DBUILD_ON_RPI
+    ${AMCC}ar rcs libnexio.a libnexio.o
+    cd ../nexutil
+    echo "typedef uint32_t uint;" > types.h
+    sed -i 's/argp-extern/argp/' nexutil.c
+    ${AMCC}gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=0 -I. -I../libnexio -I../../patches/include -L../libnexio/ -lnexio
+    scp nexutil admin@<address of your rt-ac86u>:/jffs/nexutil
+    ssh admin@<address of your rt-ac86u> "/bin/chmod +x /jffs/nexutil"
+    ```
 
 # Extract from our License
 
