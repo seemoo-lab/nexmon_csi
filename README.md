@@ -95,12 +95,10 @@ On your Raspberry Pi 3B+/4 running Raspbian with kernel 4.19 run the following:
 3. Install the kernel headers to build the driver and some dependencies: `apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
 4. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
 5. Go into the root directory of the repository: `cd nexmon`
-6. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
-
-   `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
-7. Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-
-   `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+5. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
+   `cd buildtools/isl-1.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+6. Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
+   `cd buildtools/mpfr-4.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 8. Then you can setup the build environment for compiling firmware patches
    * Setup the build environment: `source setup_env.sh`
 
@@ -132,22 +130,22 @@ The following steps will get you started on Xubuntu 18.04.3 LTS:
     `make install-firmware REMOTEADDR=<address of your rt-ac86u>` to compile our firmware patch and install it on your RT-AC86U router.
 8. Clone the aarch64 toolchain repository: `git clone https://github.com/RMerl/am-toolchains.git`.
 9. Set the compile environment:
-    ```
-    export AMCC=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/bin/aarch64-buildroot-linux-gnu-
-    export LD_LIBRARY_PATH=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/lib
-    ```
+  ```
+  export AMCC=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/bin/aarch64-buildroot-linux-gnu-
+  export LD_LIBRARY_PATH=$(pwd)/am-toolchains/brcm-arm-hnd/crosstools-aarch64-gcc-5.3-linux-4.1-glibc-2.22-binutils-2.25/usr/lib
+  ```
 10. Go back to the nexmon repository root, compile and install nexutil:
-    ```
-    cd utilities/libnexio
-    ${AMCC}gcc -c libnexio.c -o libnexio.o -DBUILD_ON_RPI
-    ${AMCC}ar rcs libnexio.a libnexio.o
-    cd ../nexutil
-    echo "typedef uint32_t uint;" > types.h
-    sed -i 's/argp-extern/argp/' nexutil.c
-    ${AMCC}gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=0 -I. -I../libnexio -I../../patches/include -L../libnexio/ -lnexio
-    scp nexutil admin@<address of your rt-ac86u>:/jffs/nexutil
-    ssh admin@<address of your rt-ac86u> "/bin/chmod +x /jffs/nexutil"
-    ```
+  ```
+  cd utilities/libnexio
+  ${AMCC}gcc -c libnexio.c -o libnexio.o -DBUILD_ON_RPI
+  ${AMCC}ar rcs libnexio.a libnexio.o
+  cd ../nexutil
+  echo "typedef uint32_t uint;" > types.h
+  sed -i 's/argp-extern/argp/' nexutil.c
+  ${AMCC}gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=0 -I. -I../libnexio -I../../patches/include -L../libnexio/ -lnexio
+  scp nexutil admin@<address of your rt-ac86u>:/jffs/nexutil
+  ssh admin@<address of your rt-ac86u> "/bin/chmod +x /jffs/nexutil"
+  ```
 
 # Extract from our License
 
