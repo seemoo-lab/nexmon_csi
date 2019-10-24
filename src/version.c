@@ -61,7 +61,7 @@
 #include <patcher.h>
 
 #if ((NEXMON_CHIP == CHIP_VER_BCM43455c0) && (NEXMON_FW_VERSION == FW_VER_7_45_189))
-char version[] = "7.45.189 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")";
+char version[] = "7.45.189 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")\n";
 char date[] = __DATE__;
 char time[] = __TIME__;
 __attribute__((at(0x1A6DD8, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
@@ -69,9 +69,11 @@ GenericPatch4(date_patch, date);
 __attribute__((at(0x1A6DC8, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 GenericPatch4(time_patch, time);
 #elif ((NEXMON_CHIP == CHIP_VER_BCM4339) && (NEXMON_FW_VERSION == FW_VER_6_37_32_RC23_34_43_r639704))
-char version[] = "6.37.32 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")";
+char version[] = "6.37.32 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")\n";
 #elif ((NEXMON_CHIP == CHIP_VER_BCM4358) && (NEXMON_FW_VERSION == FW_VER_7_112_300_14))
-char version[] = "7.112.300.14 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")";
+char version[] = "7.112.300.14 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")\n";
+#elif ((NEXMON_CHIP == CHIP_VER_BCM4366c0) && (NEXMON_FW_VERSION == FW_VER_10_10_122_20))
+char version[] = "10.10.122.20 (nexmon.org/csi: " GIT_VERSION "-" BUILD_NUMBER ")\n";
 #endif
 __attribute__((at(VERSION_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
 GenericPatch4(version_patch, version);

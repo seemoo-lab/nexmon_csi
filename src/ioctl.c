@@ -69,30 +69,51 @@
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
 #include <objmem.h>
 
-#define N_CMP_SRC_MAC             0x888
-#define CMP_SRC_MAC_0_0           0x889
-#define CMP_SRC_MAC_0_1           0x88a
-#define CMP_SRC_MAC_0_2           0x88b
-#define CMP_SRC_MAC_1_0           0x88c
-#define CMP_SRC_MAC_1_1           0x88d
-#define CMP_SRC_MAC_1_2           0x88e
-#define CMP_SRC_MAC_2_0           0x88f
-#define CMP_SRC_MAC_2_1           0x890
-#define CMP_SRC_MAC_2_2           0x891
-#define CMP_SRC_MAC_3_0           0x892
-#define CMP_SRC_MAC_3_1           0x893
-#define CMP_SRC_MAC_3_2           0x894
-#define APPLY_PKT_FILTER          0x898
-#define PKT_FILTER_BYTE           0x899
-
-#define FIFODELAY       0x89e
-
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+#define SHM_CSI_COLLECT         0xB80
+#define NSSMASK                 0xB81
+#define COREMASK                0xB82
+#define APPLY_PKT_FILTER        0xB83
+#define PKT_FILTER_BYTE         0xB84
+#define N_CMP_SRC_MAC           0xB85
+#define CMP_SRC_MAC_0_0         0xB86
+#define CMP_SRC_MAC_0_1         0xB87
+#define CMP_SRC_MAC_0_2         0xB88
+#define CMP_SRC_MAC_1_0         0xB89
+#define CMP_SRC_MAC_1_1         0xB8A
+#define CMP_SRC_MAC_1_2         0xB8B
+#define CMP_SRC_MAC_2_0         0xB8C
+#define CMP_SRC_MAC_2_1         0xB8D
+#define CMP_SRC_MAC_2_2         0xB8E
+#define CMP_SRC_MAC_3_0         0xB8F
+#define CMP_SRC_MAC_3_1         0xB90
+#define CMP_SRC_MAC_3_2         0xB91
+#define FORCEDEAF               0xB92
+#define CLEANDEAF               0xB93
+#define FIFODELAY               0xB94
+#else
+#define N_CMP_SRC_MAC           0x888
+#define CMP_SRC_MAC_0_0         0x889
+#define CMP_SRC_MAC_0_1         0x88A
+#define CMP_SRC_MAC_0_2         0x88B
+#define CMP_SRC_MAC_1_0         0x88C
+#define CMP_SRC_MAC_1_1         0x88D
+#define CMP_SRC_MAC_1_2         0x88E
+#define CMP_SRC_MAC_2_0         0x88F
+#define CMP_SRC_MAC_2_1         0x890
+#define CMP_SRC_MAC_2_2         0x891
+#define CMP_SRC_MAC_3_0         0x892
+#define CMP_SRC_MAC_3_1         0x893
+#define CMP_SRC_MAC_3_2         0x894
+#define APPLY_PKT_FILTER        0x898
+#define PKT_FILTER_BYTE         0x899
+#define FIFODELAY               0x89e
 #define SHM_CSI_COLLECT         0x8b0
-#define SHM_CSI_COPIED          0x8b1
-#define	CLEANDEAF		0x8a3
-#define	FORCEDEAF		0x8a4
-#define NSSMASK         0x8a6
-#define COREMASK        0x8a7
+#define	CLEANDEAF               0x8a3
+#define	FORCEDEAF               0x8a4
+#define NSSMASK                 0x8a6
+#define COREMASK                0x8a7
+#endif
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -204,4 +225,5 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 __attribute__((at(0x1F3488, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x20CD80, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1F3230, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
+__attribute__((at(0x2F0CF8, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);

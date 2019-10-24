@@ -71,11 +71,22 @@ extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 
 // header of csi frame coming from ucode
 struct d11csihdr {
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+#define CSIDATA_PER_CHUNK   64
+    uint16 NexmonCSICfg;
+    uint32 csi[CSIDATA_PER_CHUNK>>2];
+    uint16 csiconf;
+    uint16 start;
+    uint8  src[6];
+    uint16 seqcnt;
+    uint16 chanspec;
+#else
     uint16 RxFrameSize;                 /* 0x000 Set to 0x2 for CSI frames */
     uint16 NexmonExt;                   /* 0x002 */
     uint16 NexmonCSICfg;		/* 0x004 Configuration of this CSI */
     uint16 NexmonCSILen;		/* 0x006 Number of bytes in this chunk */
     uint32 csi[];                       /* 0x008 Array of CSI data */
+#endif
 } __attribute__((packed));
 
 // original hardware header
@@ -92,6 +103,14 @@ struct d11rxhdr {
     uint16 RxStatus2;                   /* 0x012 extended MAC Rx status */
     uint16 RxTSFTime;                   /* 0x014 RxTSFTime time of first MAC symbol + M_PHY_PLCPRX_DLY */
     uint16 RxChan;                      /* 0x016 gain code, channel radio code, and phy type */
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+    uint16 RxFameSize_0;                /* size of rx-frame in fifo-0 in case frame is copied to fifo-1 */
+    uint16 HdrConvSt;                   /* hdr conversion status. Copy of ihr(RCV_HDR_CTLSTS). */
+    uint16 AvbRxTimeL;                  /* AVB RX timestamp low16 */
+    uint16 AvbRxTimeH;                  /* AVB RX timestamp high16 */
+    uint16 MuRate;                      /* MU rate info (bit3:0 MCS, bit6:4 NSTS) */
+    uint16 Pad;
+#endif
 } __attribute__((packed));
 
 // header or regular frame coming from ucode
@@ -151,34 +170,43 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 {
     struct osl_info *osh = wlc_hw->wlc->osh;
     struct wl_info *wl = wlc_hw->wlc->wl;
-    
-
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+    if (wlc_rxhdr->rxhdr.Pad) {
+        struct d11csihdr *ucodecsifrm = (struct d11csihdr *) &(wlc_rxhdr->rxhdr.Pad);
+        int missing = ucodecsifrm->NexmonCSICfg & 0xff;
+        int tones = CSIDATA_PER_CHUNK>>2;
+        uint16 csiconf = ucodecsifrm->csiconf;
+#define NEWCSI	0x8000
+        // check this is a new frame
+        if (ucodecsifrm->start & NEWCSI) {
+#else
     if (wlc_rxhdr->rxhdr.RxFrameSize == 2) {
         struct d11csihdr *ucodecsifrm = (struct d11csihdr *) &(wlc_rxhdr->rxhdr);
         int missing = ucodecsifrm->NexmonCSICfg & 0xff;
         int tones = ucodecsifrm->NexmonCSILen;
-
-        // check this is a new frame
+        uint16 csiconf = (ucodecsifrm->NexmonCSICfg >> 8)&0x3f;
+#define CSIDATA_PER_CHUNK   56
 #define NEWCSI	0x4000
+        // check this is a new frame
         if (ucodecsifrm->NexmonCSICfg & NEWCSI) {
+#endif
             if (p_csi != 0) {
-                printf ("unexpected new csi, clearing old\n");
-                pkt_buf_free_skb (osh, p_csi, 0);
+                printf("unexpected new csi, clearing old\n");
+                pkt_buf_free_skb(osh, p_csi, 0);
             }
-#define CSIDATA_PER_CHUNK	56
-            create_new_csi_frame (wl, (ucodecsifrm->NexmonCSICfg >> 8)&0x3f, missing * CSIDATA_PER_CHUNK);
+            create_new_csi_frame(wl, csiconf, missing * CSIDATA_PER_CHUNK);
             missing_csi_frames = missing;
             inserted_csi_values = 0;
         }
         else if (p_csi == 0) {
-            printf ("unexpected csi data\n");
+            printf("unexpected csi data\n");
             pkt_buf_free_skb(osh, p, 0);
             return;
         }
         else if (missing != missing_csi_frames) {
-            printf ("number of missing frames mismatch\n");
+            printf("number of missing frames mismatch\n");
             pkt_buf_free_skb(osh, p, 0);
-            pkt_buf_free_skb (osh, p_csi, 0);
+            pkt_buf_free_skb(osh, p_csi, 0);
             p_csi = 0;
             return;
         }
@@ -195,10 +223,12 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
             udpfrm->csi_values[inserted_csi_values] = (uint32)((int16)(sint14.val)<<16);
             sint14.val = ucodecsifrm->csi[i] & 0x3fff;
             udpfrm->csi_values[inserted_csi_values] |= ((uint32)((int16)(sint14.val)))&0xffff;
-#elif (NEXMON_CHIP == CHIP_VER_BCM4358)
-            // csi format is 
-            // sign(1bit) real(9bit)    sign(1bit) image(9bit)   exp(5bit)
-            // |-|--------------------||-|--------------------||----------|
+#elif ((NEXMON_CHIP == CHIP_VER_BCM4358) || (NEXMON_CHIP == CHIP_VER_BCM4366c0))
+            // csi format
+            // for bcm4358:
+            // sign(1bit) real(9bit) sign(1bit) imag(9bit) exp(5bit)
+            // for bcm4366c0:
+            // sign(1bit) real(12bit) sign(1bit) imag(12bit) exp(6bit)
             // forward as uint32 and unpack in user application
             udpfrm->csi_values[inserted_csi_values] = ucodecsifrm->csi[i];
 #endif
@@ -209,8 +239,13 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 
         // send csi udp to host
         if (missing_csi_frames == 0) {
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+            memcpy(udpfrm->SrcMac, &(ucodecsifrm->src), sizeof(udpfrm->SrcMac));
+            udpfrm->seqCnt = ucodecsifrm->seqcnt;
+#else
             memcpy(udpfrm->SrcMac, &(ucodecsifrm->csi[tones]), sizeof(udpfrm->SrcMac)); // last csifrm also contains SrcMac
             udpfrm->seqCnt = *((uint16*)(&(ucodecsifrm->csi[tones]))+(sizeof(udpfrm->SrcMac)>>1)); // last csifrm also contains seqN
+#endif
             p_csi->len = sizeof(struct csi_udp_frame) + inserted_csi_values * sizeof(uint32);
             skb_pull(p_csi, sizeof(struct ethernet_ip_udp_header));
             prepend_ethernet_ipv4_udp_header(p_csi);
@@ -245,6 +280,7 @@ process_frame_prehook_off0xC(void)
 }
 __attribute__((at(0x1B2012, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
 __attribute__((at(0x1C1C3E, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
+__attribute__((at(0x2456E8, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 __attribute__((naked))
 void
 process_frame_prehook_off0x8(void)
@@ -267,21 +303,25 @@ process_frame_prehook_off0x8(void)
 __attribute__((at(0x1D4370, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x1F5768, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1DF03C, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
+__attribute__((at(0x28395C, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(initvals_rxhdr_len0, (RXE_RXHDR_LEN * 2));
 
 __attribute__((at(0x1D4388, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x1F5778, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1DF054, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
+__attribute__((at(0x28396C, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(initvals_rxhdr_len1, (RXE_RXHDR_LEN * 2));
 
 // Increase d11rxhdr size in wlc->hwrxhdr variable in wlc_bmac_attach
 __attribute__((at(0x1F580C, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x210F56, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1F67F8, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
+__attribute__((at(0x2F4328, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(hwrxoff, (RXE_RXHDR_LEN * 2) + RXE_RXHDR_EXTRA);
 
 // Increase d11rxhdr size in wlc->hwrxoff_pktget variable in wlc_bmac_attach
 __attribute__((at(0x1F5812, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x210F60, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1F6802, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
+__attribute__((at(0x2F4332, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(hwrxoff_pktget, (RXE_RXHDR_LEN * 2) + RXE_RXHDR_EXTRA + 2);

@@ -1,0 +1,323 @@
+5a6,73
+> #define	READVAL(offset)                                 \
+> 	mov	0xf, r33                                        \
+> table_loop1:                                            \
+> 	jnzxh	SPR_Ext_IHR_Status & 32768, table_loop1-    \
+> 	@102	@17A1, @1800, @102F                         \
+> table_loop2:                                            \
+> 	jnzxh	SPR_Ext_IHR_Status & 32768, table_loop2-    \
+> 	or	SPR_Ext_IHR_Data, 0x0, [0,offset]               \
+> 	mov	0x10, r33                                       \
+> table_loop3:                                            \
+> 	jnzxh	SPR_Ext_IHR_Status & 32768, table_loop3-    \
+> 	@102	@17A1, @1800, @102F                         \
+> table_loop4:                                            \
+> 	jnzxh	SPR_Ext_IHR_Status & 32768, table_loop4-    \
+> 	or	SPR_Ext_IHR_Data, 0x0, [1,offset]
+> 
+> #define	MASK(cond)	(1 << (cond & 0xf))
+> #define NEED_BEACON			(MASK(COND_NEED_BEACON))
+> #define NEED_RESPONSEFR			(MASK(COND_NEED_RESPONSEFR))
+> #define NEED_PROBE_RESP			(MASK(COND_NEED_PROBE_RESP))
+> #define CONTENTION_PARAM_MODIFIED	(MASK(COND_CONTENTION_PARAM_MODIFIED))
+> #define MORE_FRAGMENT			(MASK(COND_MORE_FRAGMENT))
+> #define FRAME_BURST			(MASK(COND_FRAME_BURST))
+> #define REC_IN_PROGRESS			(MASK(COND_REC_IN_PROGRESS))
+> #define FRAME_NEED_ACK			(MASK(COND_FRAME_NEED_ACK))
+> #define TX_ERROR			(MASK(COND_TX_ERROR))
+> #define RX_ERROR			(MASK(COND_RX_ERROR))
+> #define TX_MULTICAST_FRAME		(MASK(COND_TX_MULTICAST_FRAME))
+> #define NEED_RTS			(MASK(COND_NEED_RTS))
+> #define PROBE_RESP_LOADED		(MASK(COND_PROBE_RESP_LOADED))
+> 
+> #define		SPARE1		r58
+> #define		SPARE2		r61
+> #define		SPARE3		r57
+> #define		SPARE4		r56
+> #define		SPARE5		r55
+> #define		SPARE6		r52
+> #define		DUMP_CSI    r54
+> 
+> #define		SHM_CSI_COLLECT		[SHM(0x1700)]
+> #define		NSSMASK				[SHM(0x1702)]
+> #define		COREMASK			[SHM(0x1704)]
+> #define		APPLY_PKT_FILTER	[SHM(0x1706)]
+> #define		PKT_FILTER_BYTE		[SHM(0x1708)]
+> #define		N_CMP_SRC_MAC		[SHM(0x170a)]
+> #define		CMP_SRC_MAC_0_0		SHM(0x170c)
+> #define		FORCEDEAF			[SHM(0x1724)]
+> #define		CLEANDEAF			[SHM(0x1726)]
+> #define		FIFODELAY			[SHM(0x1728)]
+> 
+> #define		PHYSTATUS0		[SHM(0x1730)]
+> #define		RXCHAN			[SHM(0x1732)]
+> #define		OFF1SAFE		[SHM(0x1734)]
+> 
+> #define		DEAFED			[SHM(0x1740)]
+> #define		RELIFED			[SHM(0x1742)]
+> #define		FILTEREDPKTS	[SHM(0x1744)]
+> 
+> #define phy_reg_read(addr, target)		\
+> 	mov	addr, r33						\
+> 	calls	L42							\
+> 	or	SPR_Ext_IHR_Data, 0x0, target
+> 
+> #define	phy_reg_write(addr, value)	\
+> 	mov	addr, r33					\
+> 	mov	value, r34					\
+> 	calls	L44
+> 
+56a125,134
+> 	xje	FORCEDEAF, 0, skipdeaf+
+> 	mov	0, FORCEDEAF
+> 	xadd	DEAFED, 1, DEAFED
+> 	calls	enable_carrier_search
+> skipdeaf:
+> 	xje	CLEANDEAF, 0, skiprelife+
+> 	mov	0, CLEANDEAF
+> 	xadd	RELIFED, 1, RELIFED
+> 	calls	disable_carrier_search
+> skiprelife:
+3367a3446
+> 	mov 0, DUMP_CSI
+3546a3626,3655
+> #define		MAC_OFFSET	0x1028
+> spin:
+> 	jext	COND_RX_COMPLETE, skip+
+> 	xjl	SPR_RXE_FRAMELEN, (6 + 24), spin-
+> 	xje	SHM_CSI_COLLECT, 0, skip+
+> 	xje	APPLY_PKT_FILTER, 0, nopktfilt+
+> 	and	[SHM(MAC_OFFSET)], 0xff, SPARE1
+> 	xjne	SPARE1, PKT_FILTER_BYTE, skip+
+> nopktfilt:
+> 	mov	SPR_BASE5, SPARE6
+> 	mov	N_CMP_SRC_MAC, SPARE2
+> 	mov	CMP_SRC_MAC_0_0, SPR_BASE5
+> loopaddr:
+> 	xje	SPARE2, 0, done+
+> 	mov	[0,off5], SPARE1
+> 	xjne	SPARE1, [SHM((MAC_OFFSET + 10))], nextaddr+
+> 	mov	[1,off5], SPARE1
+> 	xjne	SPARE1, [SHM((MAC_OFFSET + 12))], nextaddr+
+> 	mov	[2,off5], SPARE1
+> 	xjne	SPARE1, [SHM((MAC_OFFSET + 14))], nextaddr+
+> 	xadd	FILTEREDPKTS, 1, FILTEREDPKTS
+> 	mov	1, DUMP_CSI
+> 	jmp	done+
+> nextaddr:
+> 	xsub	SPARE2, 1, SPARE2
+> 	xadd	SPR_BASE5, 3, SPR_BASE5
+> 	jmp	loopaddr-
+> done:
+> 	mov	SPARE6, SPR_BASE5
+> skip:
+4225a4335,4337
+> 	mov 0, [0x87f]
+> 	mov	0xdead, [0x880]
+> 	mov	0x86E, SPARE1
+4243a4356,4451
+> 	xje	DUMP_CSI, 0, dont_dump_csi
+> 	mov	[0x870], PHYSTATUS0
+> 	mov	[0x879], RXCHAN
+> 	mov	0, DUMP_CSI
+> 	calls	enable_carrier_search
+> 	mov	1, CLEANDEAF
+> 	mov	SPR_BASE1, OFF1SAFE
+> 	mov	[SHM((MAC_OFFSET + 10))], SPARE4
+> 	mov	SPARE4, [SHM(0x1644)]
+> 	mov	[SHM((MAC_OFFSET + 12))], SPARE4
+> 	mov	SPARE4, [SHM(0x1646)]
+> 	mov	[SHM((MAC_OFFSET + 14))], SPARE4
+> 	mov	SPARE4, [SHM(0x1648)]
+> 	mov	[SHM((MAC_OFFSET + 22))], SPARE4
+> 	mov	SPARE4, [SHM(0x164a)]
+> 	mov	RXCHAN, SPARE4
+> 	mov	SPARE4, [SHM(0x164c)]
+> #define		ACPHY_TBL_ID_CORE0CHANESTTBL	73
+> #define		ACPHY_TBL_ID_CORE1CHANESTTBL	105
+> #define		ACPHY_TBL_ID_CORE2CHANESTTBL	137
+> #define		ACPHY_TBL_ID_CORE3CHANESTTBL	169
+> 	mov	0, SPARE4		// core 0..3
+> loop_core:
+> 	mov	ACPHY_TBL_ID_CORE0CHANESTTBL, SPARE5
+> 	xje	SPARE4, 0, table_set+
+> 	mov	ACPHY_TBL_ID_CORE1CHANESTTBL, SPARE5
+> 	xje	SPARE4, 1, table_set+
+> 	mov	ACPHY_TBL_ID_CORE2CHANESTTBL, SPARE5
+> 	xje	SPARE4, 2, table_set+
+> 	mov	ACPHY_TBL_ID_CORE3CHANESTTBL, SPARE5
+> table_set:
+> 	mov	0, SPARE6		// NSSRX 0..3
+> loop_nss:
+>     mov SPARE6, SPARE1
+>     sl  SPARE1, 3, SPARE1
+>     or  SPARE4, SPARE1, SPARE1
+>     sl  SPARE1, 8, [SHM(0x1640)]
+> 	sl	1, SPARE6, SPARE1
+> 	and	SPARE1, NSSMASK, SPARE1
+> 	xje	SPARE1, 0, skip_this_core_nss
+> 	sl	1, SPARE4, SPARE1
+> 	and	SPARE1, COREMASK, SPARE1
+> 	xje	SPARE1, 0, skip_this_core_nss
+> goextract:
+> 	mov	0x3800, SPARE2
+> 	and	RXCHAN, SPARE2, SPARE2
+> 	sr	SPARE2, 11, SPARE2
+> 	mov	16, SPARE3
+> 	xje	SPARE2, 0x4, chunk_set+
+> 	mov	8, SPARE3
+> 	xje SPARE2, 0x3, chunk_set+
+> 	mov	4, SPARE3
+> chunk_set:
+> 	mov	0x8000, SPARE1
+> 	or	SPARE1, SPARE3, [SHM(0x1642)]
+> 	sl	SPARE6, 8, SPARE2
+> loop_main_csi:
+> 	phy_reg_write(0x00d, SPARE5)
+> 	phy_reg_write(0x00e, SPARE2)
+> 	mov	SHM(0x1600), SPR_BASE1
+> 	mov	16, SPARE1
+> slurp:
+> 	READVAL(off1)
+> 	xadd SPR_BASE1, 2, SPR_BASE1
+> 	xsub SPARE1, 1, SPARE1
+> 	xjne SPARE1, 0, slurp-
+> 	mov	OFF1SAFE, SPR_BASE1
+> 	mov	[0x86e], SPARE1
+> 	mov	SPARE1, [0xaee]
+> 	mov	[0x86f], SPARE1
+> 	mov	SPARE1, [0xaef]
+> 	sl	SPARE4, 10, SPARE1
+> 	or	SPARE1, SPARE3, [0xaff]
+> 	sl	SPARE6, 8, SPARE1
+> 	or	[0xaff], SPARE1, [0xaff]
+> 	mov	0xaee, SPARE1
+> 	calls L902
+> 	xje	FIFODELAY, 0, skip_delay
+> 	xadd SPR_TSF_WORD0, FIFODELAY, SPARE1
+> wait_loop:
+> 	xjne SPR_TSF_WORD0, SPARE1, wait_loop-
+> skip_delay:
+> 	mov	0x7fff, SPARE1
+> 	and	[SHM(0x1642)], SPARE1, SPARE1
+> 	mov	SPARE1, [SHM(0x1642)]
+> 	xadd SPARE2, 16, SPARE2
+> 	xsub SPARE3, 1, SPARE3
+> 	xjne SPARE3, 0, loop_main_csi-
+> skip_this_core_nss:
+> 	xadd SPARE6, 1, SPARE6
+> 	xjne SPARE6, 4, loop_nss-
+> 	xadd SPARE4, 1, SPARE4
+> 	xjne SPARE4, 4, loop_core-
+> 	calls disable_carrier_search
+> 	mov 0, CLEANDEAF
+> dont_dump_csi:
+5150,5151c5358,5359
+< 	mov	0x86E, SPR_RXE_RXHDR_OFFSET
+< 	mov	0x12, SPR_RXE_RXHDR_LEN
+---
+> 	mov	SPARE1, SPR_RXE_RXHDR_OFFSET
+> 	mov	RXE_RXHDR_LEN, SPR_RXE_RXHDR_LEN
+6625c6833,6931
+< 	@0	@0, @0, @0
+\ No newline at end of file
+---
+> 
+> #define		ClassifierCtrl		0x140
+> #define		core0_crsControlu	0x167D
+> #define		core0_crsControll	0x167C
+> #define		core0_crsControluSub1	0x167F
+> #define		core0_crsControllSub1	0x167E
+> #define		core0_computeGainInfo	0x6D4
+> #define		ed_crsEn		0x339
+> #define		BBConfig		0x1
+> #define		RfseqMode		0x400
+> enable_carrier_search:
+> 	phy_reg_read(ClassifierCtrl, SPARE1)
+> 	orxh	4, SPARE1 & ~0x0007, SPARE1
+> 	phy_reg_write(ClassifierCtrl, SPARE1)
+> 	mov	0, SPARE1
+> 	mov	4, SPARE4
+> luppa_core:
+> 	mov	core0_crsControlu, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControll, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControluSub1, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControllSub1, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	xadd	0x200, SPARE1, SPARE1
+> 	xsub	SPARE4, 1, SPARE4
+> 	xjne	SPARE4, 0, luppa_core-
+> 	mov	0, SPARE1
+> 	mov	4, SPARE4
+> luppa_core:
+> 	mov	core0_computeGainInfo, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x4000, SPARE3 & ~0x4000, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	xadd	0x200, SPARE1, SPARE1
+> 	xsub	SPARE4, 1, SPARE4
+> 	xjne	SPARE4, 0, luppa_core-
+> 	phy_reg_write(ed_crsEn, 0)
+> 	rets
+> 
+> disable_carrier_search:
+> 	phy_reg_read(ClassifierCtrl, SPARE1)
+> 	orxh	7, SPARE1 & ~0x0007, SPARE1
+> 	phy_reg_write(ClassifierCtrl, SPARE1)
+> 	mov	0, SPARE1
+> 	mov	4, SPARE4
+> luppa_core:
+> 	mov	core0_crsControlu, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x10, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControll, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x10, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControluSub1, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x10, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	mov	core0_crsControllSub1, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x10, SPARE3 & ~0x0010, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	xadd	0x200, SPARE1, SPARE1
+> 	xsub	SPARE4, 1, SPARE4
+> 	xjne	SPARE4, 0, luppa_core-
+> 	mov	0, SPARE1
+> 	mov	4, SPARE4
+> luppa_core:
+> 	mov	core0_computeGainInfo, SPARE2
+> 	xadd	SPARE2, SPARE1, SPARE2
+> 	phy_reg_read(SPARE2, SPARE3)
+> 	orxh	0x0, SPARE3 & ~0x4000, SPARE3
+> 	phy_reg_write(SPARE2, SPARE3)
+> 	xadd	0x200, SPARE1, SPARE1
+> 	xsub	SPARE4, 1, SPARE4
+> 	xjne	SPARE4, 0, luppa_core-
+> 	phy_reg_write(ed_crsEn, 0xfff)
+> 	rets
+> 
+> 	@0	@0, @0, @0

@@ -67,12 +67,67 @@
 #define NEX_CAP_CSI_EXTRACT (1 << 3)
 int capabilities = NEX_CAP_CSI_EXTRACT;
 
+#if NEXMON_CHIP == CHIP_VER_BCM4366c0
+extern unsigned char nonmuucode_compressed_bin[];
+extern unsigned int nonmuucode_compressed_bin_len;
+extern unsigned char nonmuucodex_compressed_bin[];
+extern unsigned int nonmuucodex_compressed_bin_len;
+extern unsigned char muucode_compressed_bin[];
+extern unsigned int muucode_compressed_bin_len;
+extern unsigned char muucodex_compressed_bin[];
+extern unsigned int muucodex_compressed_bin_len;
+
+__attribute__((at(WLC_NONMUUCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_nonmuucode_write_compressed, wlc_ucode_write_compressed_args);
+
+__attribute__((at(NONMUUCODESTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(nonmuucodestart_ptr, nonmuucode_compressed_bin);
+
+__attribute__((at(NONMUUCODESIZE_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(nonmuucodesize_ptr, &nonmuucode_compressed_bin_len);
+
+
+__attribute__((at(WLC_NONMUUCODEX_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_nonmuucodex_write_compressed, wlc_ucodex_write_compressed_args);
+
+__attribute__((at(NONMUUCODEXSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(nonmuucodexstart_ptr, nonmuucodex_compressed_bin);
+
+__attribute__((at(NONMUUCODEXSIZE_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(nonmuucodexsize_ptr, &nonmuucodex_compressed_bin_len);
+
+
+__attribute__((at(WLC_MUUCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_muucode_write_compressed, wlc_ucode_write_compressed_args);
+
+__attribute__((at(MUUCODESTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(muucodestart_ptr, muucode_compressed_bin);
+
+__attribute__((at(MUUCODESIZE_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(muucodesize_ptr, &muucode_compressed_bin_len);
+
+
+__attribute__((at(WLC_MUUCODEX_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_muucodex_write_compressed, wlc_ucodex_write_compressed_args);
+
+__attribute__((at(MUUCODEXSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(muucodexstart_ptr, muucodex_compressed_bin);
+
+__attribute__((at(MUUCODEXSIZE_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(muucodexsize_ptr, &muucodex_compressed_bin_len);
+
+__attribute__((at(HNDRTE_RECLAIM_UCODES_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(hndrte_reclaim_ucodes_end, PATCHSTART);
+#else
 __attribute__((at(WLC_UCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 __attribute__((at(HNDRTE_RECLAIM_0_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
 GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
+#endif
+
 extern unsigned char templateram_bin[];
-#if TEMPLATERAMSTART_PTR != 0
+#if 1+TEMPLATERAMSTART_PTR-1 != 0
 __attribute__((at(TEMPLATERAMSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
 GenericPatch4(templateram_bin, templateram_bin);
 #endif
+
