@@ -139,7 +139,7 @@ struct csi_udp_frame {
     uint16 seqCnt;
     uint16 csiconf;
     uint16 chanspec;
-    uint16 pad;
+    uint16 chip;
     uint32 csi_values[];
 } __attribute__((packed));
 
@@ -162,7 +162,7 @@ create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
     udpfrm->seqCnt = 0;
     udpfrm->csiconf = csiconf;
     udpfrm->chanspec = get_chanspec(wl->wlc);
-    udpfrm->pad = 0xdead;
+    udpfrm->chip = NEXMON_CHIP;
 }
 
 void
