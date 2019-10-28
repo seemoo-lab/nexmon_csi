@@ -15,31 +15,19 @@ bcm4366c0   | 10_10_122_20      | Asus RT-AC86U
 
 ## Usage
 
-After following the getting started guide for your device below, you can begin extracting CSI by doing the following. The first step can be run locally or on the extraction device, all the subsequent steps shall be executed on the latter.
-1. Use utils/makecsiparams/makecsiparams to generate a base64 encoded parameter string that can be used to configure the extractor. Important arguments are:
+After following the [getting started](#getting-started) guide for your device below, you can begin extracting CSI by doing the following. The first step can be run locally or on the extraction device, all the subsequent steps shall be executed on the latter.
+1. Use utils/makecsiparams/makecsiparams to generate a base64 encoded parameter string that can be used to configure the extractor.
+   The following example call generates a parameter string that enables collection on channel 157 with 80 MHz bandwidth on the first core for the first spatial stream for frames starting with 0x88 originating from 00:11:22:33:44:55 or aa:bb:aa:bb:aa:bb:
     ```
-    -h           print this message
-    -e 1/0       enable/disable CSI collection (0 = disable)
-    -c chanspec  Broadcom format channel specification
-    -C coremask  bitmask with cores where to activate capture
-                 (e.g., 0x5 = 0b0101 set core 0 and 2)
-    -N nssmask   bitmask with spatial streams to capture
-                 (e.g., 0x7 = 0b0111 capture first 3 ss)
-    -m addr      filter on this source mac address (up to four)
-    -b byte      filter frames starting with byte
-    -d delay     delay in us after each CSI operation
-                 (really needed for 3x4, 4x3 and 4x4 configurations, without it is enforced automatically)
+    makecsiparams -c 157/80 -C 1 -N 1 -m 00:11:22:33:44:55,aa:bb:aa:bb:aa:bb -b 0x88
+    m+IBEQGIAgAAESIzRFWqu6q7qrsAAAAAAAAAAAAAAAAAAA==
     ```
-    The following example call generates a parameter string that enables collection on channel 157 with 80 MHz bandwidth on the first core for the first spatial stream for frames starting with 0x88 originating from 00:11:22:33:44:55 or aa:bb:aa:bb:aa:bb:
-    ```
-    $ makecsiparams -e 1 -c 0xe29b -C 1 -N 1 -m 00:11:22:33:44:55,aa:bb:aa:bb:aa:bb -b 0x88
-    m+IBEQGAAQAAESIzRFUAAAAAAAAAAAAAAAAAAAAAAAAAAA==
-    ```
+   For a full list of possible parameters run `makecsiparams -h`.
 2. *bcm43455c0 only*: make sure wpa_supplicant is not running: `pkill wpa_supplicant`
 3. Make sure your interface is up: `ifconfig wlan0 up` (replace wlan0 with your interface name)
 4. Configure the extractor using nexutil and the generated parameters (adapt the argument of -v with your parameters):
     ```
-    nexutil -Iwlan0 -s500 -b -l34 -vm+IBEQGAAQAAESIzRFUAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+    nexutil -Iwlan0 -s500 -b -l34 -vm+IBEQGIAgAAESIzRFWqu6q7qrsAAAAAAAAAAAAAAAAAAA==
     ```
 5. Enable monitor mode:
 
@@ -56,7 +44,7 @@ After following the getting started guide for your device below, you can begin e
 
 ## Analyzing the CSI
 
-Each UDP packet containing collected CSI has 10.10.10.10 as source address and is destined to 255.255.255.255 on port 5500. The payload starts with four magic bytes 0x11111111, followed by the six byte source mac address as well as the two byte sequence number of the Wi-Fi frame that triggered the collection of the CSI contained in this packet. The next two bytes contain core and spatial stream number where the lowest three bits indicate the core and the next three bits the spatial stream number, e.g. 0x0019 (0b00011001) means core 0 and spatial stream 3. The chanspec used during extraction can be found in the subsequent two bytes. After two bytes reserved for future use, the actual CSI data follows. Relative to using 20, 40, or 80 MHz wide channels those are 64, 128, or 256 times four bytes long. For the bcm4339 and bcm43455c0 the data contains interleaved int16 real and int16 imaginary parts for each complex CSI value. The bcm4358 and bcm4366c0 return values in a floating point format with one bit sign of the following nine or twelve bits of a real part and the same for a imaginary part, followed by an exponent of five or six bits. We provide matlab scripts under utils/matlab/ for reading and plotting both formats. Make sure to compile a mex file from utils/matlab/unpack_float.c before reading values of the bcm4358 or bcm4366c0 for the first time. Then fill in the configuration section in utils/matlab/csireader.m and run the script. There is an example capture file utils/matlab/example.pcap holding four UDPs of a capture on a bcm4358 for two cores and two spacial streams.
+Each UDP packet containing collected CSI has 10.10.10.10 as source address and is destined to 255.255.255.255 on port 5500. The payload starts with four magic bytes 0x11111111, followed by the six byte source mac address as well as the two byte sequence number of the Wi-Fi frame that triggered the collection of the CSI contained in this packet. The next two bytes contain core and spatial stream number where the lowest three bits indicate the core and the next three bits the spatial stream number, e.g. 0x0019 (0b00011001) means core 0 and spatial stream 3. The chanspec used during extraction can be found in the subsequent two bytes. After two bytes identifying the chip version, the actual CSI data follows. Relative to using 20, 40, or 80 MHz wide channels those are 64, 128, or 256 times four bytes long. For the bcm4339 and bcm43455c0 the data contains interleaved int16 real and int16 imaginary parts for each complex CSI value. The bcm4358 and bcm4366c0 return values in a floating point format with one bit sign of the following nine or twelve bits of a real part and the same for an imaginary part, followed by an exponent of five or six bits. We provide matlab scripts under utils/matlab/ for reading and plotting both formats. Make sure to compile a mex file from utils/matlab/unpack_float.c before reading values of the bcm4358 or bcm4366c0 for the first time. Then fill in the configuration section in utils/matlab/csireader.m and run the script. There is an example capture file utils/matlab/example.pcap holding four UDPs of a capture on a bcm4358 for two cores and two spatial streams.
 
 # Getting Started
 
@@ -107,7 +95,7 @@ On your Raspberry Pi 3B+/4 running Raspbian with kernel 4.19 run the following:
     `git clone https://github.com/seemoo-lab/nexmon_csi.git`
 10. Enter the created subdirectory nexmon_csi and run
     `make install-firmware` to compile our firmware patch and install it on the Raspberry Pi.
-11. Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
+11. Install nexutil: from the nexmon root directory switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 12. *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 ## bcm4366c0
@@ -157,19 +145,18 @@ a) "Matthias Schulz, Daniel Wegemer and Matthias Hollick. Nexmon:
        The C-based Firmware Patching Framework. https://nexmon.org"
 
 b) "Francesco Gringoli, Matthias Schulz, Jakob Link, and Matthias
-       Hollick. Free Your CSI: A Channel State Information Extraction
-       Platform For Modern Wi-Fi Chipsets. Accepted to appear in
-       Proceedings of the 13th Workshop on Wireless Network Testbeds,
-       Experimental evaluation & CHaracterization (WiNTECH 2019),
-       October 2019."
+       Hollick. [Free Your CSI: A Channel State Information Extraction
+       Platform For Modern Wi-Fi Chipsets](https://doi.org/10.1145/3349623.3355477). In Proceedings of the 13th
+       Workshop on Wireless Network Testbeds, Experimental evaluation
+       & CHaracterization (WiNTECH 2019), October 2019."
 
 # References
 
 * Matthias Schulz, Daniel Wegemer and Matthias Hollick. **Nexmon: The C-based Firmware Patching 
   Framework**. https://nexmon.org
-* Francesco Gringoli, Matthias Schulz, Jakob Link, and Matthias Hollick. **Free Your CSI: 
-  A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets**.
-  Accepted to appear in the 13th Workshop on Wireless Network Testbeds, Experimental evaluation & CHaracterization (WiNTECH 2019), October 2019. https://doi.org/10.1145/3349623.3355477
+* Francesco Gringoli, Matthias Schulz, Jakob Link, and Matthias Hollick. **[Free Your CSI: 
+  A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets](https://doi.org/10.1145/3349623.3355477)**.
+  In Proceedings of the 13th Workshop on Wireless Network Testbeds, Experimental evaluation & CHaracterization (WiNTECH 2019), October 2019. https://doi.org/10.1145/3349623.3355477
 
 [//]: # "[Get references as bibtex file](https://nexmon.org/bib)"
 
