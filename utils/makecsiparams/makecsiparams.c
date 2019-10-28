@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <net/ethernet.h>
 */
+#include "bcmwifi_channels.h"
 
 void st16le (uint16_t value, uint16_t *addr)
 {
@@ -68,13 +69,13 @@ void usage ()
         "Usage: makecsiparams [OPTION...]\n"
         "\n"
         "   -h           print this message\n"
-        "   -e on/off    enable/disable CSI collection (0 = disable)\n"
-        "   -c chanspec  Broadcom format channel specification\n"
+        "   -e on/off    enable/disable CSI collection (0 = disable, default is 1)\n"
+        "   -c chanspec  Channel specification <channel>/<bandwidth>\n"
         "   -C coremask  bitmask with cores where to activate capture\n"
         "                (e.g., 0x5 = 0b0101 set core 0 and 2)\n"
         "   -N nssmask   bitmask with spatial streams to capture\n"
         "                (e.g., 0x7 = 0b0111 capture first 3 ss)\n"
-        "   -m addr      filter on this source mac address (up to four)\n"
+        "   -m addr      filter on this source mac address (up to four, comma separated)\n"
         "   -b byte      filter frames starting with byte\n"
         "   -d delay     delay in us after each CSI operation\n"
         "                (really needed for 3x4, 4x3 and 4x4 configurations,\n"
@@ -104,16 +105,22 @@ int main (int argc, char *argv[]) {
     int c;
     int retval = 0;
 
-    int enable = 0;
+    int enable = 1;
     int coremask = 0;
     int nssmask = 0;
     int force_delay = 0;
     int delay;
     int nmac = 0;
     int byte = 0;
-    int chanspec = 0;
+    //int chanspec = 0;
+    uint16_t chanspec = 0;
     char *endptr = NULL;
     int doraw = 0;
+
+    if(argc < 2) {
+        usage ();
+        goto finish;
+    }
 
     while ((c = getopt(argc, argv, "hre:m:b:c:C:N:d:")) != EOF) {
         switch (c) {
@@ -131,27 +138,32 @@ int main (int argc, char *argv[]) {
                     fprintf (stderr, "Invalid enable value\n");
                     goto finish_error;
                 }
-                p.csi_collect = enable;
                 break;
 
             case 'm':
                 {
-                    struct ether_addr *ea = ether_aton (optarg);
-                    if (ea == NULL) {
-                        fprintf (stderr, "Invalid mac address\n");
-                        goto finish_error; 
-                    }
+                    char *split;
+                    split = strtok(optarg, ",");
+                    struct ether_addr *ea;
+                    while (split != NULL) {
+                        if (nmac >= MAX_MAC_ADDRESS) {
+                            fprintf (stderr, "Only %d mac addresses can be given\n", MAX_MAC_ADDRESS);
+                            goto finish_error;
+                        }
 
-                    if (nmac >= MAX_MAC_ADDRESS) {
-                        fprintf (stderr, "Only %d mac addresses can be given\n", MAX_MAC_ADDRESS);
-                        goto finish_error;
-                    }
+                        ea = ether_aton (split);
+                        if (ea == NULL) {
+                            fprintf (stderr, "Invalid mac address\n");
+                            goto finish_error; 
+                        }
 
-                    // assuming mac addresses are packed
-                    memcpy (((void *) &p.cmp_src_mac_0_0) + nmac * 6,
-                            ea->ether_addr_octet /* ea->octet */, 6);
-                    nmac ++;
-                    st16le(nmac, &p.n_mac_addr);
+                        // assuming mac addresses are packed
+                        memcpy (((void *) &p.cmp_src_mac_0_0) + nmac * 6,
+                                ea->ether_addr_octet /* ea->octet */, 6);
+                        nmac ++;
+                        st16le(nmac, &p.n_mac_addr);
+                        split = strtok(NULL, ",");
+                    }
                     break;
                 }
 
@@ -166,12 +178,19 @@ int main (int argc, char *argv[]) {
                 break;
 
             case 'c':
-                chanspec = strtol (optarg, &endptr, 0);
-                if (*endptr != 0) {
-                    fprintf (stderr, "Invalid chanspec string\n");
+                //chanspec = strtol (optarg, &endptr, 0);
+                //if (*endptr != 0) {
+                //    fprintf (stderr, "Invalid chanspec string\n");
+                //    goto finish_error;
+                //}
+                //
+                //st16le ((uint16_t) chanspec, &p.chanspec);
+                chanspec = wf_chspec_aton(optarg);
+                if (chanspec == 0) {
+                    fprintf (stderr, "Invalid chanspec\n");
                     goto finish_error;
                 }
-                st16le ((uint16_t) chanspec, &p.chanspec);
+                p.chanspec = chanspec;
                 break;
 
             case 'C':
@@ -181,7 +200,7 @@ int main (int argc, char *argv[]) {
                     goto finish_error;
                 }
                 p.core_nss_mask = (p.core_nss_mask & 0xf0) | coremask;
-                fprintf (stdout, "mask core: %04x\n", p.core_nss_mask);
+                //fprintf (stdout, "mask core: %04x\n", p.core_nss_mask);
                 break;
 
             case 'N':
@@ -191,7 +210,7 @@ int main (int argc, char *argv[]) {
                     goto finish_error;
                 }
                 p.core_nss_mask = (p.core_nss_mask & 0x0f) | (nssmask << 4);
-                fprintf (stdout, "mask nss: %04x\n", p.core_nss_mask);
+                //fprintf (stdout, "mask nss: %04x\n", p.core_nss_mask);
                 break;
 
             case 'd':
@@ -210,12 +229,9 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    p.csi_collect = enable;
+
     if (enable != 0) {
-        if (nmac == 0) {
-            fprintf (stderr, "No mac address given\n");
-            goto finish_error;
-        }
-    
         if (chanspec == 0) {
             fprintf (stderr, "No channel given\n");
             goto finish_error;
