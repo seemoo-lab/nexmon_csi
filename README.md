@@ -84,9 +84,9 @@ On your Raspberry Pi 3B+/4 running Raspbian with kernel 4.19 run the following:
 4. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
 5. Go into the root directory of the repository: `cd nexmon`
 5. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
-   `cd buildtools/isl-1.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+   `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
 6. Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-   `cd buildtools/mpfr-4.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+   `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 8. Then you can setup the build environment for compiling firmware patches
    * Setup the build environment: `source setup_env.sh`
 
