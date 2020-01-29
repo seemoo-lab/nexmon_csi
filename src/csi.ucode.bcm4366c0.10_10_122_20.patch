@@ -79,8 +79,8 @@
 > 	calls	disable_carrier_search
 > skiprelife:
 3367a3446
-> 	mov 0, DUMP_CSI
-3546a3626,3655
+> 	mov	0, DUMP_CSI
+3546a3626,3657
 > #define		MAC_OFFSET	0x1028
 > spin:
 > 	jext	COND_RX_COMPLETE, skip+
@@ -90,6 +90,7 @@
 > 	and	[SHM(MAC_OFFSET)], 0xff, SPARE1
 > 	xjne	SPARE1, PKT_FILTER_BYTE, skip+
 > nopktfilt:
+> 	xje	N_CMP_SRC_MAC, 0, nomacfilter+
 > 	mov	SPR_BASE5, SPARE6
 > 	mov	N_CMP_SRC_MAC, SPARE2
 > 	mov	CMP_SRC_MAC_0_0, SPR_BASE5
@@ -102,6 +103,7 @@
 > 	mov	[2,off5], SPARE1
 > 	xjne	SPARE1, [SHM((MAC_OFFSET + 14))], nextaddr+
 > 	xadd	FILTEREDPKTS, 1, FILTEREDPKTS
+> nomacfilter:
 > 	mov	1, DUMP_CSI
 > 	jmp	done+
 > nextaddr:
@@ -111,11 +113,11 @@
 > done:
 > 	mov	SPARE6, SPR_BASE5
 > skip:
-4225a4335,4337
+4225a4337,4339
 > 	mov 0, [0x87f]
 > 	mov	0xdead, [0x880]
 > 	mov	0x86E, SPARE1
-4243a4356,4451
+4243a4358,4453
 > 	xje	DUMP_CSI, 0, dont_dump_csi
 > 	mov	[0x870], PHYSTATUS0
 > 	mov	[0x879], RXCHAN
@@ -149,10 +151,10 @@
 > table_set:
 > 	mov	0, SPARE6		// NSSRX 0..3
 > loop_nss:
->     mov SPARE6, SPARE1
->     sl  SPARE1, 3, SPARE1
->     or  SPARE4, SPARE1, SPARE1
->     sl  SPARE1, 8, [SHM(0x1640)]
+> 	mov	SPARE6, SPARE1
+> 	sl	SPARE1, 3, SPARE1
+> 	or	SPARE4, SPARE1, SPARE1
+> 	sl	SPARE1, 8, [SHM(0x1640)]
 > 	sl	1, SPARE6, SPARE1
 > 	and	SPARE1, NSSMASK, SPARE1
 > 	xje	SPARE1, 0, skip_this_core_nss
@@ -212,13 +214,13 @@
 > 	calls disable_carrier_search
 > 	mov 0, CLEANDEAF
 > dont_dump_csi:
-5150,5151c5358,5359
+5150,5151c5360,5361
 < 	mov	0x86E, SPR_RXE_RXHDR_OFFSET
 < 	mov	0x12, SPR_RXE_RXHDR_LEN
 ---
 > 	mov	SPARE1, SPR_RXE_RXHDR_OFFSET
 > 	mov	RXE_RXHDR_LEN, SPR_RXE_RXHDR_LEN
-6625c6833,6931
+6625c6835,6933
 < 	@0	@0, @0, @0
 \ No newline at end of file
 ---

@@ -23,6 +23,10 @@ endif
 
 ifneq ($(findstring bcm4366c0,$(FWUCODE)), )
 B43VERSION=b43-v2
+else ifneq ($(findstring bcm43455c0,$(FWUCODE)), )
+B43VERSION=b43-v3
+else ifneq ($(findstring bcm4358,$(FWUCODE)), )
+B43VERSION=b43-v3
 else
 B43VERSION=b43
 endif
@@ -210,7 +214,7 @@ src/$(UCODEFILE:.patch=.asm): src/$(UCODEFILE) gen/ucode.asm
 gen/ucode.bin: src/$(UCODEFILE:.patch=.asm)
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/$(B43VERSION)/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/$(B43VERSION)/assembler $(NEXMON_ROOT)/buildtools/$(B43VERSION)/assembler/b43-asm $< $@ --cpp-args -DRXE_RXHDR_LEN=$(RXE_RXHDR_LEN) -- --format raw-le32
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/$(B43VERSION)/assembler $(NEXMON_ROOT)/buildtools/$(B43VERSION)/assembler/b43-asm $< $@ --cpp-args -DRXE_RXHDR_LEN=$(RXE_RXHDR_LEN) -- --format raw-le32 2>log/ass.log
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif

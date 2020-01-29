@@ -1,17 +1,17 @@
 4a5,78
 > #define phy_reg_read_to_shm_off(addr, base, offset) \
->     mov addr, r33                                   \
->     calls   L52                                     \
->     or  SPR_Ext_IHR_Data, 0x0, [base, offset]
+> 	mov	addr, r33                                   \
+> 	calls	L52                                     \
+> 	or	SPR_Ext_IHR_Data, 0x0, [base, offset]
 > 
 > #define phy_reg_read(addr, target)          \
->     mov     addr, r33                       \
->     calls   L52                             \
->     or      SPR_Ext_IHR_Data, 0x0, target
+> 	mov	addr, r33                       \
+> 	calls	L52                             \
+> 	or	SPR_Ext_IHR_Data, 0x0, target
 > 
 > #define phy_reg_write(addr, value)			\
-> 	mov addr, r33							\
-> 	mov value, r34							\
+> 	mov	addr, r33							\
+> 	mov	value, r34							\
 > 	calls	L54	
 > 
 > #define RX_HDR_BASE	0x8c0
@@ -74,132 +74,134 @@
 > 
 > #define NCORES 1
 34a109,118
->     je  [FORCEDEAF], 0, skipdeaf+
->     mov 0, [FORCEDEAF]
->     add [DEAFED], 1, [DEAFED]
->     calls   enable_carrier_search
+> 	je	[FORCEDEAF], 0, skipdeaf+
+> 	mov	0, [FORCEDEAF]
+> 	add	[DEAFED], 1, [DEAFED]
+> 	calls	enable_carrier_search
 > skipdeaf:
->     je  [CLEANDEAF], 0, skiprelife+
->     mov 0, [CLEANDEAF]
->     add [RELIFED], 1, [RELIFED]
->     calls   disable_carrier_search
+> 	je	[CLEANDEAF], 0, skiprelife+
+> 	mov	0, [CLEANDEAF]
+> 	add	[RELIFED], 1, [RELIFED]
+> 	calls	disable_carrier_search
 > skiprelife:
 2711a2796
-> 	mov 0, DUMP_CSI
+> 	mov	0, DUMP_CSI
 2772c2857
 < 	or	[SHM_CHAN], 0x0, [0x84B]
 ---
 > 	or	[SHM_CHAN], 0x0, [RX_HDR_RxChan]
-2856a2942,2979
+2856a2942,2981
 > spin:
->     jext    COND_RX_COMPLETE, skip+
->     jl  SPR_RXE_FRAMELEN, (6 + 24), spin-
->     jne [SHM_CSI_COLLECT], 1, skip+
->     je  r23, 0x0, skip+
->     je [APPLY_PKT_FILTER], 0, nopktfilt+
->     and [3,off1], 0x00ff, SPARE1
->     jne SPARE1, [PKT_FILTER_BYTE], skip+
+> 	jext	COND_RX_COMPLETE, skip+
+> 	jl	SPR_RXE_FRAMELEN, (6 + 24), spin-
+> 	jne	[SHM_CSI_COLLECT], 1, skip+
+> 	je	r23, 0x0, skip+
+> 	je	[APPLY_PKT_FILTER], 0, nopktfilt+
+> 	and	[3,off1], 0x00ff, SPARE1
+> 	jne	SPARE1, [PKT_FILTER_BYTE], skip+
 > nopktfilt:
->     mov 0, SPARE1
+> 	je	[N_CMP_SRC_MAC], 0, nomacfilter+
+> 	mov	0, SPARE1
 > macloop:
->     je SPARE1, [N_CMP_SRC_MAC], skip+
->     mov [CMP_SRC_MAC_3_0], SPARE2
->     mov [CMP_SRC_MAC_3_1], SPARE3
->     mov [CMP_SRC_MAC_3_2], SPARE4
->     je SPARE1, 3, macset+
->     mov [CMP_SRC_MAC_2_0], SPARE2
->     mov [CMP_SRC_MAC_2_1], SPARE3
->     mov [CMP_SRC_MAC_2_2], SPARE4
->     je SPARE1, 2, macset+
->     mov [CMP_SRC_MAC_1_0], SPARE2
->     mov [CMP_SRC_MAC_1_1], SPARE3
->     mov [CMP_SRC_MAC_1_2], SPARE4
->     je SPARE1, 1, macset+
->     mov [CMP_SRC_MAC_0_0], SPARE2
->     mov [CMP_SRC_MAC_0_1], SPARE3
->     mov [CMP_SRC_MAC_0_2], SPARE4
+> 	je	SPARE1, [N_CMP_SRC_MAC], skip+
+> 	mov	[CMP_SRC_MAC_3_0], SPARE2
+> 	mov	[CMP_SRC_MAC_3_1], SPARE3
+> 	mov	[CMP_SRC_MAC_3_2], SPARE4
+> 	je	SPARE1, 3, macset+
+> 	mov	[CMP_SRC_MAC_2_0], SPARE2
+> 	mov	[CMP_SRC_MAC_2_1], SPARE3
+> 	mov	[CMP_SRC_MAC_2_2], SPARE4
+> 	je	SPARE1, 2, macset+
+> 	mov	[CMP_SRC_MAC_1_0], SPARE2
+> 	mov	[CMP_SRC_MAC_1_1], SPARE3
+> 	mov	[CMP_SRC_MAC_1_2], SPARE4
+> 	je	SPARE1, 1, macset+
+> 	mov	[CMP_SRC_MAC_0_0], SPARE2
+> 	mov	[CMP_SRC_MAC_0_1], SPARE3
+> 	mov	[CMP_SRC_MAC_0_2], SPARE4
 > macset:
->     add SPARE1, 1, SPARE1
->     jne [8,off1], SPARE2, macloop-
->     jne [9,off1], SPARE3, macloop-
->     jne [10,off1], SPARE4, macloop-
->     or  [8,off1], 0x0, [SRC_MAC_CACHE_0]
->     or  [9,off1], 0x0, [SRC_MAC_CACHE_1]
->     or  [10,off1], 0x0, [SRC_MAC_CACHE_2]
->     or [14,off1], 0x0, [SEQ_NUM_CACHE]
->     mov 1, DUMP_CSI
+> 	add	SPARE1, 1, SPARE1
+> 	jne	[8,off1], SPARE2, macloop-
+> 	jne	[9,off1], SPARE3, macloop-
+> 	jne	[10,off1], SPARE4, macloop-
+> nomacfilter:
+> 	or	[8,off1], 0x0, [SRC_MAC_CACHE_0]
+> 	or	[9,off1], 0x0, [SRC_MAC_CACHE_1]
+> 	or	[10,off1], 0x0, [SRC_MAC_CACHE_2]
+> 	or	[14,off1], 0x0, [SEQ_NUM_CACHE]
+> 	mov	1, DUMP_CSI
 > skip:
-2859,2860c2982,2983
+2859,2860c2984,2985
 < 	mov	0x0, [0x848]
 < 	orx	1, 1, 0x3, 0x0, [0x849]
 ---
 > 	mov	0x0, [RX_HDR_RxStatus1]
 > 	orx	1, 1, 0x3, 0x0, [RX_HDR_RxStatus2]
-2897c3020
+2897c3022
 < 	orx	2, 0, 0x3, [0x849], [0x849]
 ---
 > 	orx	2, 0, 0x3, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-2903c3026
+2903c3028
 < 	orx	0, 2, r1, [0x848], [0x848]
 ---
 > 	orx	0, 2, r1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3060c3183
+3060c3185
 < 	orx	5, 5, r25, [0x848], [0x848]
 ---
 > 	orx	5, 5, r25, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3080c3203
+3080c3205
 < 	orx	0, 3, 0x1, [0x849], [0x849]
 ---
 > 	orx	0, 3, 0x1, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3096,3097c3219,3220
+3096,3097c3221,3222
 < 	orx	0, 3, 0x1, [0x848], [0x848]
 < 	orx	5, 5, r25, [0x848], [0x848]
 ---
 > 	orx	0, 3, 0x1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
 > 	orx	5, 5, r25, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3101c3224
+3101c3226
 < 	orx	0, 3, 0x0, [0x849], [0x849]
 ---
 > 	orx	0, 3, 0x0, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3126c3249
+3126c3251
 < 	jzx	0, 0, [0x849], 0x0, L551
 ---
 > 	jzx	0, 0, [RX_HDR_RxStatus2], 0x0, L551
-3268c3391
+3268c3393
 < 	or	SPR_TSF_0x3e, 0x0, [0x84A]
 ---
 > 	or	SPR_TSF_0x3e, 0x0, [RX_HDR_RxTSFTime]
-3312c3435
+3312c3437
 < 	orx	0, 0, 0x1, [0x848], [0x848]
 ---
 > 	orx	0, 0, 0x1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3384c3507
+3384c3509
 < 	orx	0, 1, 0x1, [0x848], [0x848]
 ---
 > 	orx	0, 1, 0x1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3497c3620
+3497c3622
 < 	orx	0, 2, 0x1, [0x849], [0x849]
 ---
 > 	orx	0, 2, 0x1, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3499c3622
+3499c3624
 < 	orx	0, 15, r33, [0x848], [0x848]
 ---
 > 	orx	0, 15, r33, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
-3505,3506c3628,3629
+3505,3506c3630,3631
 < 	orx	0, 4, r33, [0x848], [0x848]
 < 	jzx	0, 3, [0x849], 0x0, L627
 ---
 > 	orx	0, 4, r33, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
 > 	jzx	0, 3, [RX_HDR_RxStatus2], 0x0, L627
-3508c3631
+3508c3633
 < 	orx	0, 4, r33, [0x849], [0x849]
 ---
 > 	orx	0, 4, r33, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3511c3634
+3511c3636
 < 	orx	1, 5, r33, [0x849], [0x849]
 ---
 > 	orx	1, 5, r33, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3514,3521c3637,3645
+3514,3521c3639,3646
 < 	or	SPR_RXE_PHYRXSTAT0, 0x0, [0x842]
 < 	or	SPR_RXE_PHYRXSTAT1, 0x0, [0x843]
 < 	or	SPR_RXE_PHYRXSTAT2, 0x0, [0x844]
@@ -217,28 +219,27 @@
 > 	or	SPR_RXE_0x44, 0x0, [RX_HDR_PhyRxStatus_4]
 > 	orx	7, 0, SPR_RCM_TA_Address_2, [RX_HDR_PhyRxStatus_5], [RX_HDR_PhyRxStatus_5]
 > 	orx	0, 8, 0x1, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-> 
-3525c3649
+3525c3650
 < 	jzx	0, 0, [0x849], 0x0, L629
 ---
 > 	jzx	0, 0, [RX_HDR_RxStatus2], 0x0, L629
-3529c3653
+3529c3654
 < 	jzx	0, 2, [0x848], 0x0, L630
 ---
 > 	jzx	0, 2, [RX_HDR_RxStatus1], 0x0, L630
-3533c3657,3659
+3533c3658,3660
 < 	or	r33, 0x0, [0x840]
 ---
 > 	or	r33, 0x0, [RX_HDR_RxFrameSize]
-> 	mov RX_HDR_BASE, SPR_RXE_RXHDR_OFFSET
->     mov 0, [RX_HDR_NexmonExt]
-3537,3538c3663,3664
+> 	mov	RX_HDR_BASE, SPR_RXE_RXHDR_OFFSET
+> 	mov	0, [RX_HDR_NexmonExt]
+3537,3538c3664,3665
 < 	orx	0, 2, 0x1, [0x848], [0x848]
 < 	orx	0, 1, 0x0, [0x849], [0x849]
 ---
 > 	orx	0, 2, 0x1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
 > 	orx	0, 1, 0x0, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-3546a3673,3765
+3546a3674,3766
 > 	je	DUMP_CSI, 0, csi_end+
 > #define		ACPHY_TBL_ID_CORE0CHANESTTBL	73
 > #define		ACPHY_TBL_ID_CORE1CHANESTTBL	105
@@ -310,10 +311,10 @@
 > 	sub	SPARE1, 1, SPARE1
 > 	jne	SPARE1, 0, read_csi-
 > 	jne	SPARE3, 1, not_last_chunk_skip_mac+
->     mov [SRC_MAC_CACHE_0], [0,off5]
->     mov [SRC_MAC_CACHE_1], [1,off5]
->     mov [SRC_MAC_CACHE_2], [2,off5]
->     mov [SEQ_NUM_CACHE], [3,off5]
+> 	mov	[SRC_MAC_CACHE_0], [0,off5]
+> 	mov	[SRC_MAC_CACHE_1], [1,off5]
+> 	mov	[SRC_MAC_CACHE_2], [2,off5]
+> 	mov	[SEQ_NUM_CACHE], [3,off5]
 > not_last_chunk_skip_mac:
 > 	mov	RX_HDR_BASE + RXE_RXHDR_LEN, SPR_RXE_RXHDR_OFFSET
 > 	calls	L798
@@ -332,17 +333,16 @@
 > 	calls	disable_carrier_search
 > csi_end:
 > 	mov	0, [CLEANDEAF]
-4008c4227
+4008c4228
 < 	orx	0, 0, 0x0, [0x849], [0x849]
 ---
 > 	orx	0, 0, 0x0, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-4476,4478c4695,4697
+4476,4478c4696,4697
 < 	orx	1, 0, r23, [0x842], [0x842]
 < 	mov	0x840, SPR_RXE_RXHDR_OFFSET
 < 	mov	0xE, SPR_RXE_RXHDR_LEN
 ---
 > 	orx	1, 0, r23, [RX_HDR_PhyRxStatus_0], [RX_HDR_PhyRxStatus_0]
-> //	mov RX_HDR_BASE, SPR_RXE_RXHDR_OFFSET
 > 	mov	RXE_RXHDR_LEN, SPR_RXE_RXHDR_LEN
 6938c7157,7253
 < 	@0	@0, @0, @0
@@ -425,7 +425,7 @@
 > 	phy_reg_write(SPARE2, SPARE3)
 > 	mov	core0_crsControllSub1, SPARE2
 > 	add	SPARE2, SPARE1, SPARE2
->     phy_reg_read(SPARE2, SPARE3)
+> 	phy_reg_read(SPARE2, SPARE3)
 > 	orxh	0x10, SPARE3 & ~0x0010, SPARE3
 > 	phy_reg_write(SPARE2, SPARE3)
 > 	add	0x200, SPARE1, SPARE1
