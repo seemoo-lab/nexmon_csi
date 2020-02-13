@@ -155,6 +155,9 @@ create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
     struct osl_info *osh = wl->wlc->osh;
     // create new csi udp frame
     p_csi = pkt_buf_get_skb(osh, sizeof(struct csi_udp_frame) + length);
+    if (p_csi == 0) {
+        return;
+    }
     // fill header
     struct csi_udp_frame *udpfrm = (struct csi_udp_frame *) p_csi->data;
     // add magic bytes, csi config and chanspec to new udp frame
@@ -195,6 +198,10 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
                 pkt_buf_free_skb(osh, p_csi, 0);
             }
             create_new_csi_frame(wl, csiconf, missing * CSIDATA_PER_CHUNK);
+            if (p_csi == 0) {
+                printf("unable to allocate csi frame\n");
+                pkt_buf_free_skb(osh, p, 0);
+            }
             missing_csi_frames = missing;
             inserted_csi_values = 0;
         }
@@ -325,3 +332,7 @@ __attribute__((at(0x210F60, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1F6802, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
 __attribute__((at(0x2F4332, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(hwrxoff_pktget, (RXE_RXHDR_LEN * 2) + RXE_RXHDR_EXTRA + 2);
+
+//Workaround to skip AMSDU frames. https://github.com/seemoo-lab/nexmon/issues/280#issuecomment-516731866
+__attribute__((at(0x1B6B02, "", CHIP_VER_BCM43455c0,FW_VER_7_45_189)))
+BPatch(wlc_monitor_amsdu_patch, 0x1B6B1E);
