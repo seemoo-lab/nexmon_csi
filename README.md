@@ -46,6 +46,12 @@ After following the [getting started](#getting-started) guide for your device be
 
 Each UDP packet containing collected CSI has 10.10.10.10 as source address and is destined to 255.255.255.255 on port 5500. The payload starts with four magic bytes 0x11111111, followed by the six byte source mac address as well as the two byte sequence number of the Wi-Fi frame that triggered the collection of the CSI contained in this packet. The next two bytes contain core and spatial stream number where the lowest three bits indicate the core and the next three bits the spatial stream number, e.g. 0x0019 (0b00011001) means core 0 and spatial stream 3. The chanspec used during extraction can be found in the subsequent two bytes. After two bytes identifying the chip version, the actual CSI data follows. Relative to using 20, 40, or 80 MHz wide channels those are 64, 128, or 256 times four bytes long. For the bcm4339 and bcm43455c0 the data contains interleaved int16 real and int16 imaginary parts for each complex CSI value. The bcm4358 and bcm4366c0 return values in a floating point format with one bit sign of the following nine or twelve bits of a real part and the same for an imaginary part, followed by an exponent of five or six bits. We provide matlab scripts under utils/matlab/ for reading and plotting both formats. Make sure to compile a mex file from utils/matlab/unpack_float.c before reading values of the bcm4358 or bcm4366c0 for the first time. Then fill in the configuration section in utils/matlab/csireader.m and run the script. There is an example capture file utils/matlab/example.pcap holding four UDPs of a capture on a bcm4358 for two cores and two spatial streams.
 
+## Example
+
+The figure below shows the amplitude of 80MHz CSI changing over time extracted for one core and one spatial stream on a bcm4366c0 (Asus RT-AC86U). Corresponding Wi-Fi frames were transmitted using frame injection on a Nexus 5 smartphone, enabled using [nexmon](https://nexmon.org). The quick and heavy alternations occuring in regular intervals result from shaking the transmitter. For the rest of the capture the transmitter was pretty much kept steady in one hand.
+
+![Example of 80MHz CSI over time](gfx/csi-example-over-time.svg)
+
 # Getting Started
 
 To compile the source code, you are required to first clone the original nexmon repository that contains our C-based patching framework for Wi-Fi firmwares. Then you clone this repository as one of the sub-projects in the corresponding patches sub-directory. This allows you to build and compile all the firmware patches required to extract CSI. The following guides you through the required procedure for the different platforms.
@@ -149,7 +155,24 @@ b) "Francesco Gringoli, Matthias Schulz, Jakob Link, and Matthias
        Platform For Modern Wi-Fi Chipsets](https://doi.org/10.1145/3349623.3355477). In Proceedings of the 13th
        Workshop on Wireless Network Testbeds, Experimental evaluation
        & CHaracterization (WiNTECH 2019), October 2019."
+  ```
+  @electronic{nexmon:project,
+      author = {Schulz, Matthias and Wegemer, Daniel and Hollick, Matthias},
+      title = {Nexmon: The C-based Firmware Patching Framework},
+      url = {https://nexmon.org},
+      year = {2017}
+  }
 
+  @inproceedings{10.1145/3349623.3355477,
+      author = {Gringoli, Francesco and Schulz, Matthias and Link, Jakob and Hollick, Matthias},
+      title = {Free Your CSI: A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets},
+      year = {2019},
+      url = {https://doi.org/10.1145/3349623.3355477},
+      booktitle = {Proceedings of the 13th International Workshop on Wireless Network Testbeds, Experimental Evaluation & Characterization},
+      pages = {21–28},
+      series = {WiNTECH ’19}
+  }
+  ```
 # References
 
 * Matthias Schulz, Daniel Wegemer and Matthias Hollick. **Nexmon: The C-based Firmware Patching 
