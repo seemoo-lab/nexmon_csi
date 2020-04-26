@@ -141,6 +141,57 @@ The following steps will get you started on Xubuntu 18.04.3 LTS:
   ssh admin@<address of your rt-ac86u> "/bin/chmod +x /jffs/nexutil"
   ```
 
+# Frequently Asked Questions
+<details>
+<summary>Why don't I see any CSI packets?</summary>
+
+> There are quite a few reasons why this might happen. Check the following points to avoid usual pitfalls.
+> * Make sure you are capturing (and transmitting) on the correct channel. Also check if the chip tuned to the chanspec given by `makecsiparams -c` during configuration of the extractor (after running `nexutil -s500 ...`) by fetching the current chanspec with `nexutil -k`. If a wrong chanspec is returned you might need to add the desired chanspec to `src/regulations.c: additional_valid_chanspecs[]` first, to allow tuning to it. Returned chanspec `0x6863 85/160` probably means the chip or interface is not up. Also disable any other application that might try to change the channel, e.g. `wpa_supplicant`.
+> * If using the MAC address filter option, confirm the correctness of the given addresses.
+> * If using the byte filter option, ensure the specified byte is not faulty.
+> * CSI are extracted on a per frame basis. Thus, traffic is required to make it work. We recommend using a device with frame injection (e.g. by using [nexmon](https://nexmon.org)) as transmitter or to generate traffic between two connected devices over their WiFi interfaces e.g. with `iperf`.
+> * On Raspberry Pi 3B+ and 4B do not listen on the newly created interface `mon0` but `wlan0` instead.
+
+</details>
+
+<details>
+    <summary>What MAC addresses shall be passed to <code>makecsiparams -m</code>?</summary>
+
+> The extractor will compare the second address in the 802.11 MAC header of every received Wi-Fi frame against the addresses provided by `makecsiparams -m`. If there is a match, CSI are extracted. In most cases the second address represents the source address of the frame. If you are unsure what MAC address to use, you can capture your traffic in monitor mode (install firmware `make install-firmare`, set channel with `nexutil -k<channel>/<bandwidth>`, enable monitor mode `nexutil -m1`, capture traffic with e.g. `tcpdump`) and inspect it with e.g. `wireshark` to determine the value of the second address.
+
+</details>
+
+<details>
+    <summary>What value shall be passed to <code>makecsiparams -b</code>?</summary>
+
+> The extractor will compare the first byte of every incoming Wi-Fi frame to the byte provided by `makecsiparams -b`. Only if they match CSI are extracted. If you are unsure what value to use, you can capture your traffic in monitor mode (install firmware `make install-firmare`, set channel with `nexutil -k<channel>/<bandwidth>`, enable monitor mode `nexutil -m1`, capture traffic with e.g. `tcpdump`) and inspect it with e.g. `wireshark` to determine the value of your frames first byte. The first byte of WiFi frames hold version, type, and subtype information.
+
+</details>
+
+<details>
+    <summary>Will this support device XYZ?</summary>
+
+> As of now the Wi-Fi chips `bcm4339`, `bcm43455c0`, `bcm4358`, and `bcm4365/4366c0` are supported by this project. If your device features a Broadcom/Cypress Wi-Fi chip chances are high that this project can be ported to it. Feel free to contact us via email (jlink@seemoo.tu-darmstadt.de) for more information and/or requests.
+
+</details>
+
+<details>
+    <summary>Parts of extracted CSI are empty or look invalid. Am I doing anything wrong?</summary>
+
+> Unexpected results might be due to one of the following reasons:
+> * Extracted CSI hold values for all subcarriers including guard and null carriers, that are 64 for 20MHz, 128 for 40MHz and 256 for 80MHz. Guard and null carriers might contain arbitrary values. Especially when visualising CSI this might be disturbing. We recommend removing or setting them to zero. The corresponding subcarrier indices are mode and bandwidth dependent: 20MHz 802.11a/g `-32 to -27, 0, +27 to +31`, 20MHz 802.11n/ac `-32 to -29, 0, +29 to +31`, 40MHz `-64 to -59, -1 to +1, +59 to 63`, and 80MHz `-128 to -123, -1 to +1, +123 to 127`.
+> * If half or three quarters of extracted CSI for 40 or 80MHz are mostly empty or contain very low values it is very likely that you received a 20MHz frame inside a 40 or 80MHz wide channel. As 40 and 80MHz wide channels are just several bonded 20MHz channels this is totally possible and valid. One of the bonded 20MHz channels will be used as control channel to transmit control frames. Hence, you probably captured CSI of control frames or the transmitter is simply not using the available bandwidth.
+> * The data format of CSI extracted differ between chips. Make sure you are using the correct method to process the data. The formats are described in [analyzing the csi](#analyzing-the-csi) and examples for processing can be found unter `utils/matlab`.
+
+</details>
+
+<details>
+    <summary>How to control the extraction rate?</summary>
+
+> As the CSI extractor works per received Wi-Fi frame the rate can be controlled by the transmitter.
+
+</details>
+
 # Extract from our License
 
 Any use of the Software which results in an academic publication or
