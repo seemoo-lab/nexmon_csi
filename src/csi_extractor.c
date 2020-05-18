@@ -201,6 +201,7 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
             if (p_csi == 0) {
                 printf("unable to allocate csi frame\n");
                 pkt_buf_free_skb(osh, p, 0);
+                return;
             }
             missing_csi_frames = missing;
             inserted_csi_values = 0;
