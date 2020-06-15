@@ -283,7 +283,7 @@
 ---
 > 	orx	0, 2, 0x1, [RX_HDR_RxStatus1], [RX_HDR_RxStatus1]
 > 	orx	0, 1, 0x0, [RX_HDR_RxStatus2], [RX_HDR_RxStatus2]
-4158a4291,4378
+4158a4291,4379
 > 	je	DUMP_CSI, 0, csi_end+
 > #define		ACPHY_TBL_ID_CORE0CHANESTTBL	73
 > #define		ACPHY_TBL_ID_CORE1CHANESTTBL	105
@@ -359,6 +359,7 @@
 > 	mov	[SRC_MAC_CACHE_1], [1,off5]
 > 	mov	[SRC_MAC_CACHE_2], [2,off5]
 > 	mov	[SEQ_NUM_CACHE], [3,off5]
+> 	and	[3,off1], 0xff, [4,off5]
 > not_last_chunk_skip_mac:
 > 	mov	RX_HDR_BASE + RXE_RXHDR_LEN, SPR_RXE_RXHDR_OFFSET
 > 	calls	L900

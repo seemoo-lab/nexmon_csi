@@ -134,7 +134,9 @@ struct wlc_d11rxhdr {
 
 struct csi_udp_frame {
     struct ethernet_ip_udp_header hdrs;
-    uint32 kk1;
+    uint16 kk1;
+    int8 rssi;
+    uint8 fc; //frame control
     uint8 SrcMac[6];
     uint16 seqCnt;
     uint16 csiconf;
@@ -148,6 +150,7 @@ struct int14 {signed int val:14;} __attribute__((packed));
 uint16 missing_csi_frames = 0;
 uint16 inserted_csi_values = 0;
 struct sk_buff *p_csi = 0;
+int8 last_rssi = 0;
 
 void
 create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
@@ -161,7 +164,9 @@ create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
     // fill header
     struct csi_udp_frame *udpfrm = (struct csi_udp_frame *) p_csi->data;
     // add magic bytes, csi config and chanspec to new udp frame
-    udpfrm->kk1 = 0x11111111;
+    udpfrm->kk1 = 0x1111;
+    udpfrm->rssi = last_rssi;
+    udpfrm->fc = 0;
     udpfrm->seqCnt = 0;
     udpfrm->csiconf = csiconf;
     udpfrm->chanspec = get_chanspec(wl->wlc);
@@ -253,6 +258,7 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 #else
             memcpy(udpfrm->SrcMac, &(ucodecsifrm->csi[tones]), sizeof(udpfrm->SrcMac)); // last csifrm also contains SrcMac
             udpfrm->seqCnt = *((uint16*)(&(ucodecsifrm->csi[tones]))+(sizeof(udpfrm->SrcMac)>>1)); // last csifrm also contains seqN
+            udpfrm->fc = (*((uint16*)(&(ucodecsifrm->csi[tones]))+(sizeof(udpfrm->SrcMac)>>1)+1)); // last csifrm also contains frame control field
 #endif
             p_csi->len = sizeof(struct csi_udp_frame) + inserted_csi_values * sizeof(uint32);
             skb_pull(p_csi, sizeof(struct ethernet_ip_udp_header));
@@ -266,6 +272,7 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 
     wlc_rxhdr->tsf_l = tsf_l;
     wlc_phy_rssi_compute(wlc_hw->band->pi, wlc_rxhdr);
+    last_rssi = wlc_rxhdr->rssi;
     wlc_recv(wlc_hw->wlc, p);
 }
 
