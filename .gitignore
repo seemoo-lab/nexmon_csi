@@ -1,0 +1,17 @@
+/BUILD_NUMBER
+*.o.cmd
+*.ko.cmd
+.tmp*
+
+*.o
+modules.order
+Module.symvers
+*.ko
+*.mod.c
+/gen
+/log
+/obj/
+/src/*.asm
+/src/ucode_compressed.c
+/*-sdio.bin
+*.swp

@@ -134,7 +134,9 @@ struct wlc_d11rxhdr {
 
 struct csi_udp_frame {
     struct ethernet_ip_udp_header hdrs;
-    uint32 kk1;
+    uint16 kk1;
+    int8 rssi;
+    uint8 fc; //frame control
     uint8 SrcMac[6];
     uint16 seqCnt;
     uint16 csiconf;
@@ -148,6 +150,8 @@ struct int14 {signed int val:14;} __attribute__((packed));
 uint16 missing_csi_frames = 0;
 uint16 inserted_csi_values = 0;
 struct sk_buff *p_csi = 0;
+int8 last_rssi = 0;
+uint16 phystatus[6] = {0,0,0,0, 0, 0};
 
 void
 create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
@@ -155,10 +159,15 @@ create_new_csi_frame(struct wl_info *wl, uint16 csiconf, int length)
     struct osl_info *osh = wl->wlc->osh;
     // create new csi udp frame
     p_csi = pkt_buf_get_skb(osh, sizeof(struct csi_udp_frame) + length);
+    if (p_csi == 0) {
+        return;
+    }
     // fill header
     struct csi_udp_frame *udpfrm = (struct csi_udp_frame *) p_csi->data;
     // add magic bytes, csi config and chanspec to new udp frame
-    udpfrm->kk1 = 0x11111111;
+    udpfrm->kk1 = 0x1111;
+    udpfrm->rssi = last_rssi;
+    udpfrm->fc = 0;
     udpfrm->seqCnt = 0;
     udpfrm->csiconf = csiconf;
     udpfrm->chanspec = get_chanspec(wl->wlc);
@@ -195,6 +204,11 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
                 pkt_buf_free_skb(osh, p_csi, 0);
             }
             create_new_csi_frame(wl, csiconf, missing * CSIDATA_PER_CHUNK);
+            if (p_csi == 0) {
+                printf("unable to allocate csi frame\n");
+                pkt_buf_free_skb(osh, p, 0);
+                return;
+            }
             missing_csi_frames = missing;
             inserted_csi_values = 0;
         }
@@ -220,9 +234,9 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
             // convert to int16 real, int16 imag
             struct int14 sint14;
             sint14.val = (ucodecsifrm->csi[i] >> 14) & 0x3fff;
-            udpfrm->csi_values[inserted_csi_values] = (uint32)((int16)(sint14.val)<<16);
+            udpfrm->csi_values[inserted_csi_values] = (uint32)((int16)(sint14.val)) & 0xffff;
             sint14.val = ucodecsifrm->csi[i] & 0x3fff;
-            udpfrm->csi_values[inserted_csi_values] |= ((uint32)((int16)(sint14.val)))&0xffff;
+            udpfrm->csi_values[inserted_csi_values] |= ((uint32)((int16)(sint14.val))) << 16;
 #elif ((NEXMON_CHIP == CHIP_VER_BCM4358) || (NEXMON_CHIP == CHIP_VER_BCM4366c0))
             // csi format
             // for bcm4358:
@@ -245,7 +259,14 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 #else
             memcpy(udpfrm->SrcMac, &(ucodecsifrm->csi[tones]), sizeof(udpfrm->SrcMac)); // last csifrm also contains SrcMac
             udpfrm->seqCnt = *((uint16*)(&(ucodecsifrm->csi[tones]))+(sizeof(udpfrm->SrcMac)>>1)); // last csifrm also contains seqN
+            udpfrm->fc = (*((uint16*)(&(ucodecsifrm->csi[tones]))+(sizeof(udpfrm->SrcMac)>>1)+1)); // last csifrm also contains frame control field
 #endif
+            uint8 bw = (udpfrm->chanspec & 0x3800) >> 11;
+	    //BW 2 (20Mhz) ->  payload 28:36 are unused (tested on BCM4358 (Nexus 6P) and BCM43455c0 (Raspberry PI))
+            uint8 offset = (bw == 2) ? 28 : 0; 
+	    //Description of the bits: https://github.com/MerlinRdev/86u-merlin/blob/master/release/src-rt-5.02hnd/bcmdrivers/broadcom/net/wl/impl51/4365/src/include/d11.h#L2935
+            memcpy(&udpfrm->csi_values[offset], phystatus, sizeof(phystatus));
+
             p_csi->len = sizeof(struct csi_udp_frame) + inserted_csi_values * sizeof(uint32);
             skb_pull(p_csi, sizeof(struct ethernet_ip_udp_header));
             prepend_ethernet_ipv4_udp_header(p_csi);
@@ -258,6 +279,9 @@ process_frame_hook(struct sk_buff *p, struct wlc_d11rxhdr *wlc_rxhdr, struct wlc
 
     wlc_rxhdr->tsf_l = tsf_l;
     wlc_phy_rssi_compute(wlc_hw->band->pi, wlc_rxhdr);
+    last_rssi = wlc_rxhdr->rssi;
+    struct d11rxhdr  * rxh = &wlc_rxhdr->rxhdr;
+    memcpy(phystatus, &rxh->PhyRxStatus_0, sizeof(phystatus));
     wlc_recv(wlc_hw->wlc, p);
 }
 
@@ -325,3 +349,7 @@ __attribute__((at(0x210F60, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 __attribute__((at(0x1F6802, "", CHIP_VER_BCM4358, FW_VER_7_112_300_14)))
 __attribute__((at(0x2F4332, "", CHIP_VER_BCM4366c0, FW_VER_10_10_122_20)))
 GenericPatch1(hwrxoff_pktget, (RXE_RXHDR_LEN * 2) + RXE_RXHDR_EXTRA + 2);
+
+//Workaround to skip AMSDU frames. https://github.com/seemoo-lab/nexmon/issues/280#issuecomment-516731866
+__attribute__((at(0x1B6B02, "", CHIP_VER_BCM43455c0,FW_VER_7_45_189)))
+BPatch(wlc_monitor_amsdu_patch, 0x1B6B1E);
