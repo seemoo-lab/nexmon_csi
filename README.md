@@ -83,6 +83,12 @@ The following steps will get you started on Xubuntu 16.04 LTS:
 
 ## bcm43455c0
 
+Releases provide configurations known to work. Select the release that suits you and follow it's instructions to get started. General installation instructions are given further below.
+
+|Release|Device|OS|Kernel|
+|---|---|---|---|
+|[pi3Bplus-buster-4.19.97](./releases/pi3Bplus-buster-4.19.97/README.md)|Raspberry Pi 3B+|[Raspbian Buster Lite 2020-02-13](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/)|v4.19.97|
+
 On your Raspberry Pi 3B+/4 running Raspbian/Raspberry Pi OS with kernel 4.19 or 5.4 run the following:
 1. Make sure the following commands are executed as root: `sudo su`
 2. Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
