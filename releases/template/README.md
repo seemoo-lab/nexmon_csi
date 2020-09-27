@@ -1,12 +1,17 @@
 # Device Name &bull; Operating System &bull; Identifier
 
-Duplicate the template directory and name it after your release.
-Releases describe a known good configuration. Find the latest commit in Nexmon_CSI master which works reliably on your setup and enter it's details here.
+* Duplicate the template directory and name it after your release.
+* Release describes a known good configuration. Find the latest commit in Nexmon_CSI master which works reliably on your setup and enter it's details here.
+* For example, Commit b52fca works reliably on Raspberry Pi 3B+ running Raspbian Buster with kernel v4.19.97. So I should add that commit hash and it's date: January 30 2020 here.
 
-For example, Commit b52fca3abc18715d6d12692e531164b5d62a78fd works reliably on Raspberry Pi 3B+ running Raspbian Buster with kernel v4.19.97. So I should add that commit hash and it's date: January 30 2020 here.
-
-Commit: commit hash
-Date: Date of commit
+|||
+|---|---|
+|Device|Device Name|
+|Operating System|OS Name|
+|Kernel Version|Remove if not applicable|  
+|Commit|[<commit hash>](link to commit)|
+|Nexmon Commit|[<commit hash>](link to commit)|
+|Date| Date for Nexmon_CSI commit|
 
 
 ## Installation instructions
