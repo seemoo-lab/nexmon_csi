@@ -1,12 +1,15 @@
-# Pi 3B+ &bull; Raspbian Buster &bull; Kernel v4.19.97
+# Pi 3B+ and 4B &bull; Raspbian Buster &bull; Kernel v4.19.97
 
 |||
 |---|---|
-|Device | Raspberry Pi 3B+|
+|Device | Raspberry Pi 3B+ and 4B|
 |Raspbian | [Raspbian Buster Lite 2020-02-13](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/)|
 |Commit | [b52fca](https://github.com/seemoo-lab/nexmon_csi/commit/b52fca3abc18715d6d12692e531164b5d62a78fd)|
 |Nexmon Commit | [f9db9a](https://github.com/seemoo-lab/nexmon/commit/f9db9abcac8f40a7f8a8408429e34e1c51f33c97)|
 |Date | January 30, 2020|
+
+ **Note**: [Release pi-buster-4.19.97-plus](https://github.com/zeroby0/nexmon_csi/tree/release-pi-buster-4.19.97-plus/releases/pi-buster-4.19.97-plus) has unmerged code to add stability and more features.
+
 
 ## Installation
 
@@ -30,7 +33,7 @@ Get Kernel Headers
 
 Install Nexmon_CSI
 * `sudo su`
-* `wget https://raw.githubusercontent.com/seemoo-lab/nexmon_csi/master/releases/pi3Bplus-buster-4.19.97/install.sh -O install.sh`
+* `wget https://raw.githubusercontent.com/zeroby0/nexmon_csi/master/releases/pi3Bplus-buster-4.19.97/install.sh -O install.sh`
 * `tmux new -c /home/pi -s nexmon 'bash install.sh | tee output.log'`
 
 Your installation will happen in this tmux session. The right bottom corner will show the step running. Use `ctrl-b d` to detach, and `tmux attach-session -t nexmon` to re-attach.
@@ -52,4 +55,4 @@ Collect CSI by listening on UDP socket 5500, e.g. by using tcpdump: `tcpdump -i 
 
 ## Known issues
 * CSI collection may stop after changing parameters several times.
-* CSI collection may stop after collecting several samples.  If you have this problem, see https://github.com/seemoo-lab/nexmon_csi/pull/46
+* CSI collection may stop after collecting several samples.  If you have this problem, see [release pi-buster-4.19.97-plus](https://github.com/zeroby0/nexmon_csi/tree/release-pi-buster-4.19.97-plus/releases/pi-buster-4.19.97-plus)
