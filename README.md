@@ -105,8 +105,7 @@ On your Raspberry Pi 3B+/4 running Raspbian/Raspberry Pi OS with kernel 4.19 or 
 12. *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 ## bcm4366c0
-
-The following steps will get you started on Xubuntu 18.04.3 LTS:
+This install instruction works only with devices based on ARM processors with 64 Bit, because the used compiler and the base-driver are chosen for this destination architecture. The following steps will get you started on Xubuntu 18.04.3 LTS:
 1. Install some dependencies: `sudo apt-get install git gawk qpdf flex bison`
 2. **Only necessary for x86_64 systems**, install i386 libs: 
   ```
