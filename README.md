@@ -86,7 +86,7 @@ The following steps will get you started on Xubuntu 16.04 LTS:
 On your Raspberry Pi 3B+/4 running Raspbian/Raspberry Pi OS with kernel 4.19 or 5.4 run the following:
 1. Make sure the following commands are executed as root: `sudo su`
 2. Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-3. Install the kernel headers to build the driver and some dependencies: `apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
+3. Install the kernel headers to build the driver and some dependencies: `apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make` and `apt-get install automake autoconf libtool texinfo`
 4. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
 5. Go into the root directory of the repository: `cd nexmon`
 5. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
