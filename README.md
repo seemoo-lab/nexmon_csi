@@ -16,13 +16,22 @@ bcm4366c0   | 10_10_122_20      | Asus RT-AC86U
 ## Usage
 
 After following the [getting started](#getting-started) guide for your device below, you can begin extracting CSI by doing the following. The first step can be run locally or on the extraction device, all the subsequent steps shall be executed on the latter.
-1. Use utils/makecsiparams/makecsiparams to generate a base64 encoded parameter string that can be used to configure the extractor.
+1. Use utils/makecsiparams/makecsiparams to generate a base64 encoded parameter string that can be used to configure the extractor. To do so, first, build the tool for the generation of the parameter:
+   ```
+   cd nexmon_csi/utils/makecsiparams
+   make
+   ```
    The following example call generates a parameter string that enables collection on channel 157 with 80 MHz bandwidth on the first core for the first spatial stream for frames starting with 0x88 originating from 00:11:22:33:44:55 or aa:bb:aa:bb:aa:bb:
     ```
     makecsiparams -c 157/80 -C 1 -N 1 -m 00:11:22:33:44:55,aa:bb:aa:bb:aa:bb -b 0x88
     m+IBEQGIAgAAESIzRFWqu6q7qrsAAAAAAAAAAAAAAAAAAA==
     ```
-   For a full list of possible parameters run `makecsiparams -h`.
+    or alternatively:
+    ```
+    ./makecsiparams -c 157/80 -C 1 -N 1 -m 00:11:22:33:44:55,aa:bb:aa:bb:aa:bb -b 0x88
+    m+IBEQGIAgAAESIzRFWqu6q7qrsAAAAAAAAAAAAAAAAAAA==
+    ```
+   For a full list of possible parameters run `makecsiparams -h` (or `./makecsiparams -h`).
 2. *bcm43455c0 only*: make sure wpa_supplicant is not running: `pkill wpa_supplicant`
 3. Make sure your interface is up: `ifconfig wlan0 up` (replace wlan0 with your interface name)
 4. Configure the extractor using nexutil and the generated parameters (adapt the argument of -v with your parameters):
@@ -85,24 +94,36 @@ The following steps will get you started on Xubuntu 16.04 LTS:
 
 On your Raspberry Pi 3B+/4 running Raspbian/Raspberry Pi OS with kernel 4.19 or 5.4 run the following:
 1. Make sure the following commands are executed as root: `sudo su`
-2. Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-3. Install the kernel headers to build the driver and some dependencies: `apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
-4. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
-5. Go into the root directory of the repository: `cd nexmon`
-5. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
+2. Update your Raspbian installation: `apt-get update`, but note that you mustn't upgrade because that would install the newer kernel with version 5.10 and thus it would not be compatible with this version of Νexmon CSI.
+3. Make sure you have the correct Raspberry Pi kernel headers. Do not use the command `apt install raspberrypi-kernel-headers` as it will install the kerner headers for the 5.10 kernel version. If you don't already have the correct headers, for the case of Raspberry Pi OS, you can use the [rpi-source](https://github.com/RPi-Distro/rpi-source) tool to install the headers corresponding to your kernel version, either 4.19 or 5.4:
+   * Install the dependencies
+     ```
+     apt install git bc bison flex libssl-dev
+     
+     ```
+   * Install the headers
+     ```
+     sudo wget https://raw.githubusercontent.com/RPi-Distro/rpi-source/master/rpi-source -O /usr/local/bin/rpi-source
+     sudo chmod +x /usr/local/bin/rpi-source && /usr/local/bin/rpi-source -q --tag-update
+     rpi-source
+     ```
+4. Install the kernel headers to build the driver and some dependencies: `apt install libgmp3-dev gawk qpdf make autoconf libtool texinfo`. If you didn't use the rpi-source tool then the dependencies of the Nexmon CSI are: `apt install git libgmp3-dev gawk qpdf bison flex make`.
+5. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
+6. Go into the root directory of the repository: `cd nexmon`
+7. Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
    `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
-6. Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-   `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
-8. Then you can setup the build environment for compiling firmware patches
-   * Setup the build environment: `source setup_env.sh`
-
+8. Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
+   `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+9. Then you can setup the build environment for compiling firmware patches
+   * Go into the root directory `cd nexmon`.
+   * Setup the build environment: `source setup_env.sh`.
    * Run `make` to extract ucode, templateram and flashpatches from the original firmwares.
-9. Navigate to patches/bcm43455c0/7_45_189/ and clone this repository:
+10. Navigate to patches/bcm43455c0/7_45_189/ and clone this repository:
     `git clone https://github.com/seemoo-lab/nexmon_csi.git`
-10. Enter the created subdirectory nexmon_csi and run
+11. Enter the created subdirectory nexmon_csi and run
     `make install-firmware` to compile our firmware patch and install it on the Raspberry Pi.
-11. Install nexutil: from the nexmon root directory switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
-12. *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+12. Install nexutil: from the nexmon root directory switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
+13. *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 ## bcm4366c0
 
