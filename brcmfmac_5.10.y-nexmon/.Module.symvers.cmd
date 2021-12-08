@@ -1,0 +1,1 @@
+cmd_/home/pi/nexmon/patches/bcm43455c0/7_45_189/nexmon_csi/brcmfmac_5.10.y-nexmon/Module.symvers := sed 's/ko$$/o/' /home/pi/nexmon/patches/bcm43455c0/7_45_189/nexmon_csi/brcmfmac_5.10.y-nexmon/modules.order | scripts/mod/modpost -m -a   -o /home/pi/nexmon/patches/bcm43455c0/7_45_189/nexmon_csi/brcmfmac_5.10.y-nexmon/Module.symvers -e -i Module.symvers   -T -
