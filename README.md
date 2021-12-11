@@ -89,7 +89,7 @@ On your Raspberry Pi 3B+/4 running Raspbian/Raspberry Pi OS with kernel 4.19 or 
 3. Install the kernel headers to build the driver and some dependencies: 
 ```
       apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make
-      apt-get install automake autoconf libtool texinfo`
+      apt install automake autoconf libtool texinfo
       reboot
 ```
 4. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
@@ -115,8 +115,8 @@ This install instruction works only with devices based on ARM processors with 64
 2. **Only necessary for x86_64 systems**, install i386 libs: 
   ```
   sudo dpkg --add-architecture i386
-  sudo apt-get update
-  sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+  sudo apt update
+  sudo apt install libc6:i386 libncurses5:i386 libstdc++6:i386
   ```
 3. Clone the nexmon base repository: `git clone https://github.com/seemoo-lab/nexmon.git`.
 4. Navigate to the previously cloned nexmon directory and execute `source setup_env.sh` to set 
