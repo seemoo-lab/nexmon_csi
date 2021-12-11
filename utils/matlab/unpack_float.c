@@ -114,9 +114,9 @@ void mexFunction(int nlhs, mxArray *plhs[],
     plhs[0] = mxCreateNumericMatrix((*nfftp)<<1, 1, mxINT32_CLASS, mxREAL);
     Hout = (int32_T*)mxGetPr(plhs[0]);
     if (*formatp == 0) {
-        unpack_float_acphy(10, 1, 0, 1, 9, 5, *nfftp, H, Hout);
+        unpack_float_acphy(10, 0, 0, 1, 9, 5, *nfftp, H, Hout);
     } else if (*formatp == 1) {
-        unpack_float_acphy(10, 1, 0, 1, 12, 6, *nfftp, H, Hout);
+        unpack_float_acphy(10, 0, 0, 1, 12, 6, *nfftp, H, Hout);
     } else {
         mexErrMsgIdAndTxt("NexmonCSI:unpack_float:format",
                           "format can only be 0 or 1.");
