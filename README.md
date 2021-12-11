@@ -13,6 +13,10 @@ bcm43455c0  | 7_45_189          | Raspberry Pi B3+/B4
 bcm4358     | 7_112_300_14_sta  | Nexus 6P
 bcm4366c0   | 10_10_122_20      | Asus RT-AC86U
 
+## Be careful
+
+Backwards incompatible changes were introduced by merging https://github.com/seemoo-lab/nexmon_csi/pull/256.
+
 ## Usage
 
 After following the [getting started](#getting-started) guide for your device below, you can begin extracting CSI by doing the following. The first step can be run locally or on the extraction device, all the subsequent steps shall be executed on the latter.
