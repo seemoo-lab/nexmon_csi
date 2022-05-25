@@ -82,10 +82,16 @@ class SampleSet(object):
         from pcap files.
     '''
     def __init__(self, samples, bandwidth):
-        self.mac, self.seq, self.css, self.csi = samples
+        self.rssi, self.fctl, self.mac, self.seq, self.css, self.csi = samples
 
         self.nsamples = self.csi.shape[0]
         self.bandwidth = bandwidth
+    
+    def get_rssi(self, index):
+        return self.rssi[index]
+    
+    def get_fctl(self, index):
+        return self.fctl[index]
 
     def get_mac(self, index):
         return self.mac[index*6: (index+1)*6]
@@ -124,6 +130,9 @@ class SampleSet(object):
         # Core and Spatial Stream
         css = self.get_css(index).hex()
 
+        rssi = self.get_rssi(index)
+        fctl = self.get_fctl(index)
+
         print(
             f'''
 Sample #{index}
@@ -131,6 +140,8 @@ Sample #{index}
 Source Mac ID: {macid}
 Sequence: {sc}.{fn}
 Core and Spatial Stream: 0x{css}
+RSSI: {rssi}
+FCTL: {fctl}
             '''
         )
 
@@ -230,6 +241,8 @@ def read_pcap(pcap_filepath, bandwidth=0, nsamples_max=0):
         nsamples_max = __find_nsamples_max(pcap_filesize, nsub)
 
     # Preallocating memory
+    rssi = bytearray(nsamples_max * 1)
+    fctl = bytearray(nsamples_max * 1)
     mac = bytearray(nsamples_max * 6)
     seq = bytearray(nsamples_max * 2)
     css = bytearray(nsamples_max * 2)
@@ -252,7 +265,9 @@ def read_pcap(pcap_filepath, bandwidth=0, nsamples_max=0):
         )
         ptr += 50
 
-        # 4 bytes: Magic Bytes               @ 0 - 4
+        # 2 bytes: Magic Bytes               @ 0 - 1
+        # 1 bytes: RSSI                      @ 2 - 2
+        # 1 bytes: FCTL                      @ 3 - 3
         # 6 bytes: Source Mac ID             @ 4 - 10
         # 2 bytes: Sequence Number           @ 10 - 12
         # 2 bytes: Core and Spatial Stream   @ 12 - 14
@@ -260,6 +275,8 @@ def read_pcap(pcap_filepath, bandwidth=0, nsamples_max=0):
         # 2 bytes: Chip Version              @ 16 - 18
         # nsub*4 bytes: CSI Data             @ 18 - 18 + nsub*4
 
+        rssi[nsamples] = fc[ptr+2]
+        fctl[nsamples] = fc[ptr+3]
         mac[nsamples*6: (nsamples+1)*6] = fc[ptr+4: ptr+10]
         seq[nsamples*2: (nsamples+1)*2] = fc[ptr+10: ptr+12]
         css[nsamples*2: (nsamples+1)*2] = fc[ptr+12: ptr+14]
@@ -283,11 +300,18 @@ def read_pcap(pcap_filepath, bandwidth=0, nsamples_max=0):
             csi_np[:nsamples, ::2] + 1.j * csi_np[:nsamples, 1::2], axes=(1,)
     )
 
+    # Convert RSSI to Two's complement form
+    rssi = np.frombuffer(rssi, dtype=np.int8, count = nsamples)
+
     return SampleSet(
-        (mac,
-        seq,
-        css,
-        csi_cmplx),
+        (
+            rssi,
+            fctl,
+            mac,
+            seq,
+            css,
+            csi_cmplx,
+        ),
         bandwidth
     )
 
