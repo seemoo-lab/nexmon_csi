@@ -17,3 +17,19 @@ Usage: makecsiparams [OPTION...]
                 without it is enforced automatically)
    -r           generate raw output (no base64)
 ```
+
+### Buid And Install makecsiparams for Nexus5
+1. Set ndk-build path       
+```
+export PATH=$PATH:{android-ndk-r11c path}
+```
+2. Build command    
+```
+cd utils/makecsiparams
+ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_PROJECT_PATH=`pwd`
+```
+3. Install    
+```
+make install
+```
+
