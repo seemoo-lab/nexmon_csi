@@ -8,7 +8,6 @@ LOCAL_SRC_FILES := \
 LOCAL_MODULE := makecsiparams
 LOCAL_MODULE_FILENAME := makecsiparams
 
-#NDK_TOOL_CHAIN_VERSION := 5.4
 LOCAL_CFLAGS += -std=c99
 LOCAL_CFLAGS += -fPIE
 LOCAL_LDFLAGS += -fPIE -pie
