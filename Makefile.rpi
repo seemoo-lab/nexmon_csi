@@ -198,10 +198,10 @@ ifeq (,$(findstring Raspberry Pi,$(file < /proc/cpuinfo)))
 endif
 
 reload-driver: is-rpi
-	@printf "\033[0;31m  UNLOADING DRIVER\033[0m %s\n" "brcmfmac_wcc"
-	$(Q)sudo modprobe -r brcmfmac_wcc
-	@printf "\033[0;31m  LOADING DRIVER\033[0m %s\n" "brcmfmac_wcc"
-	$(Q)sudo modprobe brcmfmac_wcc
+	@printf "\033[0;31m  UNLOADING DRIVER\033[0m %s\n" "brcmfmac_cyw"
+	$(Q)sudo modprobe -r brcmfmac_cyw
+	@printf "\033[0;31m  LOADING DRIVER\033[0m %s\n" "brcmfmac_cyw"
+	$(Q)sudo modprobe brcmfmac_cyw
 	$(Q)sleep 2
 
 unmanage: is-rpi
@@ -222,20 +222,20 @@ reload-full: reload-driver
 	$(Q)nexutil -s86 -i -v0
 
 install-firmware: $(RAM_FILE) is-rpi
-	@printf "\033[0;31m  COPYING\033[0m %s => /lib/firmware/nexmon/%s\n" $(RAM_FILE) $(RAM_FILE)
-	$(Q)sudo mkdir -p /lib/firmware/nexmon
-	$(Q)sudo cp $(RAM_FILE) /lib/firmware/nexmon/$(RAM_FILE)
-	@printf "\033[0;31m  SETTING FIRMWARE ALTERNATIVE\033[0m cyfmac43455-sdio.bin to /lib/firmware/nexmon/%s\n" $(RAM_FILE)
-	$(Q)sudo update-alternatives --install /lib/firmware/cypress/cyfmac43455-sdio.bin cyfmac43455-sdio.bin /lib/firmware/nexmon/$(RAM_FILE) 30
-	$(Q)sudo update-alternatives --set cyfmac43455-sdio.bin /lib/firmware/nexmon/$(RAM_FILE)
+	@printf "\033[0;31m  COPYING\033[0m %s => /usr/lib/firmware/nexmon/%s\n" $(RAM_FILE) $(RAM_FILE)
+	$(Q)sudo mkdir -p /usr/lib/firmware/nexmon
+	$(Q)sudo cp $(RAM_FILE) /usr/lib/firmware/nexmon/$(RAM_FILE)
+	@printf "\033[0;31m  SETTING FIRMWARE ALTERNATIVE\033[0m cyfmac43455-sdio.bin to /usr/lib/firmware/nexmon/%s\n" $(RAM_FILE)
+	$(Q)sudo update-alternatives --install /usr/lib/firmware/cypress/cyfmac43455-sdio.bin cyfmac43455-sdio.bin /usr/lib/firmware/nexmon/$(RAM_FILE) 30
+	$(Q)sudo update-alternatives --set cyfmac43455-sdio.bin /usr/lib/firmware/nexmon/$(RAM_FILE)
 
 restore-wifi: is-rpi
 	@printf "\033[0;31m  SETTING FIRMWARE ALTERNATIVE\033[0m to default cyfmac43455-sdio.bin\n"
 	$(Q)sudo update-alternatives --auto cyfmac43455-sdio.bin
-	@printf "\033[0;31m  UNLOADING DRIVER\033[0m %s\n" "brcmfmac_wcc"
-	$(Q)sudo modprobe -r brcmfmac_wcc
-	@printf "\033[0;31m  LOADING DRIVER\033[0m %s\n" "brcmfmac_wcc"
-	$(Q)sudo modprobe brcmfmac_wcc
+	@printf "\033[0;31m  UNLOADING DRIVER\033[0m %s\n" "brcmfmac_cyw"
+	$(Q)sudo modprobe -r brcmfmac_cyw
+	@printf "\033[0;31m  LOADING DRIVER\033[0m %s\n" "brcmfmac_cyw"
+	$(Q)sudo modprobe brcmfmac_cyw
 	$(Q)sleep 2
 	@printf "\033[0;31m  BRINGUP INTERFACE\033[0m %s\n" "wlan0"
 	$(Q)sudo ifconfig wlan0 up
